@@ -92,6 +92,7 @@ import (
 	"github.com/Tencent/WeKnora/internal/models/embedding"
 	"github.com/Tencent/WeKnora/internal/models/limiter" // register built-in vendors
 	"github.com/Tencent/WeKnora/internal/models/utils/ollama"
+	"github.com/Tencent/WeKnora/internal/multiagent"
 	"github.com/Tencent/WeKnora/internal/router"
 	"github.com/Tencent/WeKnora/internal/sandbox"
 	"github.com/Tencent/WeKnora/internal/storageallowlist"
@@ -338,6 +339,9 @@ func BuildContainer(container *dig.Container) *dig.Container {
 		return manager, nil
 	}))
 	must(container.Provide(service.NewAgentService))
+	// Multiagent P1: single-step adapter over the native agent stack. Lives
+	// after AgentService/ModelService so dig resolves both from the graph.
+	must(container.Provide(multiagent.NewRunner))
 
 	// Session service (depends on agent service)
 	// SessionService is created after AgentService and passes itself to AgentService.CreateAgentEngine when needed
