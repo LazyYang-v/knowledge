@@ -289,12 +289,6 @@ func TestRerankWireFormatPerVendor(t *testing.T) {
 			wantBody: cohere("cohere/rerank-v3.5", three, nil),
 		},
 		{
-			name: "weknoracloud signs its own path", provider: "weknoracloud", model: "rerank",
-			appID: "app", appSecret: "s",
-			wantPath: "/api/v1/rerank", wantAuth: [2]string{"X-APPID", "app"},
-			wantBody: cohere("rerank", three, nil),
-		},
-		{
 			name: "aliyun wraps input and parameters", provider: "aliyun", model: "gte-rerank-v2",
 			base:     "/api/v1/services/rerank/text-rerank/text-rerank",
 			wantPath: "/api/v1/services/rerank/text-rerank/text-rerank",

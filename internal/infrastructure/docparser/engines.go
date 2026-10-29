@@ -17,8 +17,6 @@ const (
 	SimpleEngineName = "simple"
 	// AnydocEngineName is the in-process anydoc office-document converter.
 	AnydocEngineName = "anydoc"
-	// WeKnoraCloudEngineName is the hosted WeKnora Cloud document reader.
-	WeKnoraCloudEngineName = "weknoracloud"
 	// MinerUEngineName is a self-hosted MinerU service.
 	MinerUEngineName = "mineru"
 	// MinerUCloudEngineName is the MinerU Cloud API.
@@ -34,7 +32,6 @@ func init() {
 	RegisterEngine(&builtinEngine{})
 	RegisterEngine(&simpleEngine{})
 	RegisterEngine(&anydocEngine{})
-	RegisterEngine(&weKnoraCloudEngine{})
 	RegisterEngine(&mineruEngine{})
 	RegisterEngine(&mineruCloudEngine{})
 	RegisterEngine(&paddleOCRVLEngine{})
@@ -153,40 +150,6 @@ func (e *anydocEngine) NewReader(_ context.Context, deps ReaderDeps) (interfaces
 		return nil, errEngineUnavailable(AnydocEngineName, anydoc.UnavailableReason())
 	}
 	return NewAnydocReader(deps.Overrides, deps.Remote), nil
-}
-
-// ---------------------------------------------------------------------------
-// weknoracloud — Tenant-scoped WeKnoraCloud docreader with signed requests.
-// ---------------------------------------------------------------------------
-
-type weKnoraCloudEngine struct{}
-
-func (e *weKnoraCloudEngine) Name() string { return WeKnoraCloudEngineName }
-
-func (e *weKnoraCloudEngine) Description() string { return "WeKnoraCloud document reader" }
-
-func (e *weKnoraCloudEngine) FileTypes(_ bool) []string {
-	return []string{"docx", "doc", "pdf", "md", "markdown", "xlsx", "xls", "pptx", "ppt"}
-}
-
-func (e *weKnoraCloudEngine) CheckAvailable(_ bool, overrides map[string]string) (bool, string) {
-	if overrides["weknoracloud_app_id"] != "" {
-		return true, ""
-	}
-	return false, "WeKnora Cloud credentials not configured. Go to Settings → WeKnora Cloud to set up."
-}
-
-func (e *weKnoraCloudEngine) NewReader(
-	ctx context.Context, deps ReaderDeps,
-) (interfaces.DocReader, error) {
-	if deps.WeKnoraCloudCredentials == nil {
-		return nil, errEngineUnavailable(WeKnoraCloudEngineName, "no credential resolver configured")
-	}
-	creds := deps.WeKnoraCloudCredentials(ctx)
-	if creds == nil {
-		return nil, errEngineUnavailable(WeKnoraCloudEngineName, "tenant credentials not configured")
-	}
-	return NewWeKnoraCloudSignedDocumentReader(creds.AppID, creds.AppSecret)
 }
 
 // ---------------------------------------------------------------------------

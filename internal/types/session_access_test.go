@@ -33,16 +33,6 @@ func TestSessionRequiresAdminConsoleRead(t *testing.T) {
 		t.Fatal("external-user API session should require admin")
 	}
 
-	embed := &Session{Description: EmbedSessionMarkerPrefix + "ch-1"}
-	if !SessionRequiresAdminConsoleRead(embed, "") {
-		t.Fatal("embed description should require admin")
-	}
-
-	embedOwner := &Session{UserID: PrincipalEmbedSession + ":1:ch-1:sess-1"}
-	if !SessionRequiresAdminConsoleRead(embedOwner, "") {
-		t.Fatal("embed owner id should require admin")
-	}
-
 	im := &Session{Title: "hello"}
 	if !SessionRequiresAdminConsoleRead(im, "feishu") {
 		t.Fatal("IM-mapped session should require admin")

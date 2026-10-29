@@ -166,14 +166,8 @@
           </div>
         </section>
 
-        <!--
-          Section 2 — 状态信息（DocReader 连接 / WeKnoraCloud 凭证）
-          只有有内容时才渲染，避免空 section 空底部分隔线。
-        -->
-        <section
-          v-if="currentEngine.Name === 'builtin' || currentEngine.Name === 'weknoracloud'"
-          class="setting-drawer__section"
-        >
+        <!-- 状态信息（DocReader 连接）；只有有内容时才渲染，避免空 section 空底部分隔线。 -->
+        <section v-if="currentEngine.Name === 'builtin'" class="setting-drawer__section">
           <h4 class="setting-drawer__section-title">{{ $t('settings.parser.statusSection', '状态信息') }}</h4>
 
           <!-- builtin: DocReader 连接信息 -->
@@ -195,32 +189,6 @@
             <p class="form-desc">{{ $t('settings.parser.envVarHint') }}</p>
           </div>
 
-          <!--
-            weknoracloud: 凭证状态 — 不再用大块卡片。已配置 / 加载中 / 未配置
-            统一用 inline alert：图标 + 一行文案 + 行尾跳转 link，体量
-            匹配"一条信息"该有的样子。
-          -->
-          <template v-if="currentEngine.Name === 'weknoracloud'">
-            <div v-if="wkcState === 'configured'" class="inline-alert inline-alert--ok">
-              <t-icon name="check-circle-filled" class="inline-alert__icon" />
-              <span>{{ $t('settings.weknoraCloud.credentialConfigured') }}</span>
-            </div>
-            <div v-else-if="wkcState === 'loading'" class="inline-alert">
-              <t-icon name="loading" class="inline-alert__icon spinning" />
-              <span>{{ $t('settings.weknoraCloud.checkingStatus') }}</span>
-            </div>
-            <div v-else class="inline-alert inline-alert--warn">
-              <t-icon name="error-circle-filled" class="inline-alert__icon" />
-              <span class="inline-alert__text">
-                <span v-if="wkcState === 'expired'">{{ $t('settings.weknoraCloud.credentialExpired') }}</span>
-                <span v-else>{{ $t('settings.weknoraCloud.unconfigured') }}</span>
-              </span>
-              <a class="inline-alert__action" @click="goToWkcSettings">
-                {{ $t('settings.weknoraCloud.goToSettings') }}
-                <t-icon name="chevron-right" />
-              </a>
-            </div>
-          </template>
         </section>
 
         <!-- Section 3 — mineru 自建配置 -->
@@ -409,7 +377,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, nextTick } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useUIStore } from '@/stores/ui'
 import { useAuthStore } from '@/stores/auth'
@@ -423,7 +391,6 @@ import {
   type ParserEngineInfo,
   type ParserEngineConfig,
 } from '@/api/system'
-import { getWeKnoraCloudStatus } from '@/api/model'
 
 const { t } = useI18n()
 const uiStore = useUIStore()
@@ -433,7 +400,6 @@ const CONFIGURABLE_ENGINES = new Set(['mineru', 'mineru_cloud', 'paddleocr_vl', 
 
 /** 各解析引擎的项目/官方文档地址 */
 const ENGINE_DOC_LINKS: Record<string, string> = {
-  weknoracloud: 'https://developers.weixin.qq.com/doc/aispeech/knowledge/atomic_capability/atomic_interface.html',
   markitdown: 'https://github.com/microsoft/markitdown',
   mineru: 'https://github.com/opendatalab/MinerU',
   mineru_cloud: 'https://mineru.net/apiManage/docs',
@@ -507,12 +473,11 @@ const needsTestButton = computed(() => {
 /** 固定展示顺序，未列出的引擎排在末尾按名称排序 */
 const ENGINE_ORDER: Record<string, number> = {
   builtin: 0,
-  weknoracloud: 1,
-  simple: 2,
-  anydoc: 3,
-  markitdown: 4,
-  mineru: 5,
-  mineru_cloud: 6,
+  simple: 1,
+  anydoc: 2,
+  markitdown: 3,
+  mineru: 4,
+  mineru_cloud: 5,
   paddleocr_vl: 7,
   paddleocr_vl_cloud: 8,
 }
@@ -618,7 +583,7 @@ async function loadConfig() {
 async function loadAll() {
   loading.value = true
   error.value = ''
-  await Promise.all([loadEngines(), loadConfig(), checkWkcStatus()])
+  await Promise.all([loadEngines(), loadConfig()])
   loading.value = false
 }
 
@@ -723,33 +688,6 @@ async function onSave() {
   }
 }
 
-// ---- WeKnoraCloud 凭证状态 ----
-const wkcState = ref<'loading' | 'unconfigured' | 'configured' | 'expired'>('loading')
-
-async function checkWkcStatus() {
-  wkcState.value = 'loading'
-  try {
-    const status = await getWeKnoraCloudStatus()
-    if (status.needs_reinit) {
-      wkcState.value = 'expired'
-    } else if (status.has_models) {
-      wkcState.value = 'configured'
-    } else {
-      wkcState.value = 'unconfigured'
-    }
-  } catch {
-    wkcState.value = 'unconfigured'
-  }
-}
-
-async function goToWkcSettings() {
-  if (uiStore.showSettingsModal) {
-    uiStore.closeSettings()
-    await nextTick()
-  }
-  uiStore.openSettings('weknoracloud')
-}
-
 onMounted(loadAll)
 </script>
 
@@ -821,8 +759,7 @@ onMounted(loadAll)
 }
 
 // 解析引擎徽章配色 —— 内置/官方系绿，外部工具按性质各取一色。
-.engine-card--builtin .engine-card__badge,
-.engine-card--weknoracloud .engine-card__badge {
+.engine-card--builtin .engine-card__badge {
   .provider-card-badge-color(#07c05f);
 }
 .engine-card--simple .engine-card__badge {
@@ -898,7 +835,7 @@ onMounted(loadAll)
 }
 
 // ---- 抽屉内容 — 与 ModelEditorDialog 同款约定 ----
-// .form-item / .form-label / .form-desc / .weknoracloud-hint / .api-test
+// .form-item / .form-label / .form-desc / .api-test
 // 参照 frontend/src/components/ModelEditorDialog.vue 的命名与字号/间距
 .form-item {
   margin-bottom: 0;
@@ -996,7 +933,7 @@ onMounted(loadAll)
   letter-spacing: 0.02em;
 }
 
-// ---- Inline alert（替代之前的 .weknoracloud-hint 卡片） ----
+// ---- Inline alert ----
 // 一行内表达 "状态信号 + 一句话 + 跳转 link"，无外框/无 3px 左边，
 // 视觉重量与一行文字相当，section 内不会再被一个独立卡片打断。
 .inline-alert {
@@ -1145,8 +1082,7 @@ onMounted(loadAll)
   .engine-card__badge from the scoped block above.
 -->
 <style lang="less">
-.parser-engine-drawer--builtin .setting-drawer__header-icon,
-.parser-engine-drawer--weknoracloud .setting-drawer__header-icon {
+.parser-engine-drawer--builtin .setting-drawer__header-icon {
   background: color-mix(in srgb, var(--td-brand-color) 12%, transparent);
   color: #07C05F;
 }

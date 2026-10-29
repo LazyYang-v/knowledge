@@ -4358,7 +4358,6 @@ func (s *knowledgeService) resolveDocReader(
 	reader, err := docparser.NewReader(ctx, engine, fileType, isURL, docparser.ReaderDeps{
 		Overrides:               overrides,
 		Remote:                  s.documentReader,
-		WeKnoraCloudCredentials: s.tenantService.GetWeKnoraCloudCredentials,
 	})
 	if err != nil {
 		logger.Warnf(ctx, "[resolveDocReader] engine=%q fileType=%q unusable: %v", engine, fileType, err)

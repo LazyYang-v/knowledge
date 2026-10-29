@@ -36,8 +36,8 @@ const (
 // SkillMaintenanceSessionMarker tags the sessions that skill image operations
 // run in. Those sessions carry a real agent transcript that is deliberately
 // kept for troubleshooting, but they are infrastructure rather than
-// conversations, so the console must never list them. This mirrors how embed
-// sessions are classified (EmbedSessionMarkerPrefix): a description prefix,
+// conversations, so the console must never list them. This mirrors how skill
+// sessions are classified: a description prefix,
 // so no schema change is needed.
 const SkillMaintenanceSessionMarker = "skill_maintenance:"
 

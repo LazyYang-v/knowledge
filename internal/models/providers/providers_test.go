@@ -15,7 +15,7 @@ import (
 
 // expectedIDs is every built-in vendor this package links.
 var expectedIDs = []string{
-	"generic", "weknoracloud", "huggingface_tei",
+	"generic", "huggingface_tei",
 	"aliyun", "zhipu", "volcengine", "hunyuan", "siliconflow", "deepseek",
 	"minimax", "moonshot", "mimo", "modelscope", "qianfan", "qiniu", "longcat", "lkeap",
 	"openai", "azure_openai", "anthropic", "gemini",
@@ -83,8 +83,8 @@ func TestBuiltinDefaultURLsAcrossModelTypes(t *testing.T) {
 }
 
 func TestAllVendorsRegistered(t *testing.T) {
-	if len(expectedIDs) != 29 {
-		t.Fatalf("expected 29 vendor ids in the spec, got %d", len(expectedIDs))
+	if len(expectedIDs) != 28 {
+		t.Fatalf("expected 28 vendor ids in the spec, got %d", len(expectedIDs))
 	}
 	for _, id := range expectedIDs {
 		v, ok := modelruntime.Get(id)
@@ -106,9 +106,6 @@ func TestAllVendorsRegistered(t *testing.T) {
 		}
 		if v.RequiresAuth && v.Auth == "" {
 			t.Errorf("vendor %q: RequiresAuth without Auth style", id)
-		}
-		if v.Auth == providers.AuthSigned && v.Signer == nil {
-			t.Errorf("vendor %q: AuthSigned without Signer", id)
 		}
 		if !v.API.Known() {
 			t.Errorf("vendor %q: unknown default API %q", id, v.API)
@@ -496,20 +493,6 @@ func TestHooks(t *testing.T) {
 	}
 	if q["api-version"] != "2024-10-21" {
 		t.Errorf("azure legacy embedding api-version = %q", q["api-version"])
-	}
-
-	wk, _ := modelruntime.Get("weknoracloud")
-	u, _ = wk.Endpoint(providers.EndpointRequest{
-		BaseURL: "https://weknora.weixin.qq.com/", ModelType: types.ModelTypeKnowledgeQA,
-	})
-	if u != "https://weknora.weixin.qq.com/api/v1/chat/completions" {
-		t.Errorf("weknoracloud endpoint = %q", u)
-	}
-	if wk.Auth != providers.AuthSigned || wk.Signer == nil {
-		t.Error("weknoracloud should use a signer")
-	}
-	if err := wk.ValidateConfig(&providers.Config{}); err != nil {
-		t.Errorf("weknoracloud validate should pass without key: %v", err)
 	}
 
 	generic, _ := modelruntime.Get("generic")

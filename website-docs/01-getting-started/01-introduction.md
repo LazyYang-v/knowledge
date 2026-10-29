@@ -115,7 +115,7 @@ flowchart TB
 - **对话体验**：回答进行中追加要求、从任意历史提问分叉或原地回滚（带沙箱工作区检查点）、按会话调整思考强度，「产物」页跨会话汇总智能体生成的文件，详见[会话体验](../03-features/18-chat-experience.md)。
 - **多租户与安全**：RBAC 角色鉴权（默认开启，`WEKNORA_TENANT_ENABLE_RBAC`）、审计日志（默认保留 90 天）、邀请制注册（`auth.registration_mode=invite_only`，也可用旧变量 `DISABLE_REGISTRATION=true`）、OIDC 单点登录、SSRF 防护（可选仅白名单出站 `SSRF_DNS_WHITELIST_ONLY`）、敏感字段 AES-256 加密。界面提供简体中文、英文、日文、韩文和俄文。
 - **可观测性**：Langfuse 全链路追踪（LLM/Embedding/Rerank/VLM/ASR 调用与 token 统计）、健康检查、Swagger API 文档（`GIN_MODE=debug` 时）。
-- **生态**：REST API（`/api/v1`）+ API Key、内置 MCP Server（按空间创建端点，把 WeKnora 作为工具暴露给其他 Agent，见[MCP 集成](../03-features/08-mcp.md)）、CLI（`cli/`）、微信小程序（`miniprogram/`）、浏览器插件渠道、[本机浏览器](../05-clients/09-local-browser.md)（智能体通过 Chrome/Edge 扩展操作用户浏览器）。Lite 桌面版（macOS）可在本机沙箱中执行智能体命令。
+- **生态**：REST API（`/api/v1`）+ API Key、内置 MCP Server（按空间创建端点，把 WeKnora 作为工具暴露给其他 Agent，见[MCP 集成](../03-features/08-mcp.md)）、微信小程序（`miniprogram/`）、[本机浏览器](../05-clients/09-local-browser.md)（智能体通过 Chrome/Edge 扩展操作用户浏览器）。Lite 桌面版（macOS）可在本机沙箱中执行智能体命令。
 
 ## 系统组件一览
 
@@ -139,7 +139,7 @@ flowchart TB
 
 ```mermaid
 flowchart LR
-    Browser["浏览器 / SDK / CLI"] --> FE["frontend (Nginx :80)"]
+    Browser["浏览器 / SDK"] --> FE["frontend (Nginx :80)"]
     FE -- "/api 反向代理" --> APP["app 后端 (Go :8080)"]
     Browser -. "直连 API + X-API-Key" .-> APP
     APP -- "gRPC :50051" --> DR["docreader (Python 文档解析)"]

@@ -24,7 +24,7 @@ test('toolbox contains only the agreed tools; infrastructure and secrets stay in
       if (key) assert.equal(typeof lookup(key), 'string', key)
     }
   }
-  for (const key of ['sandbox', 'websearch', 'envvars', 'integration-api', undefined, 'unknown']) {
+  for (const key of ['sandbox', 'websearch', 'envvars', undefined, 'unknown']) {
     assert.equal(isToolboxSection(key), false)
   }
 })

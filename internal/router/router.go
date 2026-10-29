@@ -82,15 +82,12 @@ type RouterParams struct {
 	SkillHandler                 *handler.SkillHandler
 	OrganizationHandler          *handler.OrganizationHandler
 	IMHandler                    *handler.IMHandler
-	EmbedChannelHandler          *handler.EmbedChannelHandler
-	EmbedChannelService          interfaces.EmbedChannelService
 	MCPEndpointHandler           *handler.MCPEndpointHandler
 	MCPEndpointService           interfaces.MCPEndpointService
 	MCPServer                    *mcpserver.Server
 	RedisClient                  *redis.Client
 	DataSourceHandler            *handler.DataSourceHandler
 	DataSourceCredentialsHandler *handler.DataSourceCredentialsHandler
-	WeKnoraCloudHandler          *handler.WeKnoraCloudHandler
 	WikiPageHandler              *handler.WikiPageHandler
 	MemoryHandler                *handler.MemoryHandler
 	HostSandbox                  service.HostSandboxManager
@@ -104,11 +101,10 @@ func NewRouter(params RouterParams) *gin.Engine {
 	r.Use(middleware.MultipartFormCleanup())
 
 	// Trusted proxies: gin defaults to trusting ALL proxies, which makes
-	// c.ClientIP() honor a client-supplied X-Forwarded-For. Public, unauthed
-	// embed endpoints rate-limit per (channel, ClientIP), so a spoofed XFF would
-	// trivially bypass the limiter. Restrict to the fronting proxy network so
-	// only the real client IP (appended by nginx) is returned. Configurable via
-	// WEKNORA_TRUSTED_PROXIES (comma-separated CIDRs/IPs).
+	// c.ClientIP() honor a client-supplied X-Forwarded-For, letting callers
+	// spoof the value seen by IP-scoped rate limiters. Restrict to the
+	// fronting proxy network so only the real client IP (appended by nginx)
+	// is returned. Configurable via WEKNORA_TRUSTED_PROXIES (comma-separated CIDRs/IPs).
 	if err := r.SetTrustedProxies(trustedProxies()); err != nil {
 		logger.Errorf(context.Background(), "[Router] failed to set trusted proxies: %v", err)
 	}
@@ -124,7 +120,7 @@ func NewRouter(params RouterParams) *gin.Engine {
 		AllowMethods: []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
 		AllowHeaders: []string{
 			"Origin", "Content-Type", "Accept", "Authorization", "X-API-Key", "X-Request-ID", "X-Tenant-ID",
-			"X-Embed-Session", "X-External-User-ID", "X-External-User-Token", "X-WeKnora-Desktop-Token",
+			"X-External-User-ID", "X-External-User-Token", "X-WeKnora-Desktop-Token",
 			// Streamable HTTP MCP clients running in a browser send these on
 			// the /mcp/:endpoint_id surface.
 			"MCP-Protocol-Version", "Mcp-Method", "Mcp-Name", "Mcp-Session-Id", "Last-Event-ID",
@@ -157,15 +153,6 @@ func NewRouter(params RouterParams) *gin.Engine {
 		))
 	}
 
-	// Embed page framing policy: emit a per-channel `frame-ancestors` CSP so the
-	// embed SPA page (/embed/:channelId) can only be iframed by the channel's
-	// allowed origins. This is the page-level counterpart to the API Origin
-	// allowlist enforced in EmbedAuth. Registered before the static handler so
-	// it runs for the embed HTML response.
-	if params.EmbedChannelService != nil {
-		r.Use(embedFrameAncestorsMiddleware(params.EmbedChannelService))
-	}
-
 	// 前端静态文件（仅 Lite 版本内嵌前端）
 	if handler.Edition == "lite" {
 		serveFrontendStatic(r)
@@ -174,17 +161,6 @@ func NewRouter(params RouterParams) *gin.Engine {
 	// IM 回调路由（在认证中间件之前注册，使用各平台自身的签名验证）
 	RegisterIMRoutes(r, params.IMHandler)
 
-	// Web embed 公开路由（使用 publish token 鉴权，不走全局 Auth）
-	RegisterEmbedPublicRoutes(
-		r,
-		params.EmbedChannelHandler,
-		params.EmbedChannelService,
-		params.TenantService,
-		params.RedisClient,
-		params.FileService,
-		params.StorageBackendResolver,
-		params.ResourceCatalog,
-	)
 
 	// Workspace MCP server surface (/mcp/:endpoint_id): bearer-token auth per
 	// endpoint, so it must precede the global Auth middleware.
@@ -320,10 +296,8 @@ func NewRouter(params RouterParams) *gin.Engine {
 		RegisterSkillRoutes(v1, params.SkillHandler, rbacGuards)
 		RegisterOrganizationRoutes(v1, params.OrganizationHandler, rbacGuards)
 		RegisterIMChannelRoutes(v1, params.IMHandler, rbacGuards)
-		RegisterEmbedChannelRoutes(v1, params.EmbedChannelHandler, rbacGuards)
 		RegisterMCPEndpointRoutes(v1, params.MCPEndpointHandler, rbacGuards)
 		RegisterDataSourceRoutes(v1, params.DataSourceHandler, params.DataSourceCredentialsHandler, rbacGuards)
-		RegisterWeKnoraCloudRoutes(v1, params.WeKnoraCloudHandler, rbacGuards)
 		RegisterWikiPageRoutes(v1, params.WikiPageHandler, rbacGuards)
 		RegisterMemoryRoutes(v1, params.MemoryHandler, rbacGuards)
 		RegisterChunkerDebugRoutes(v1, rbacGuards)

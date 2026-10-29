@@ -128,7 +128,7 @@ type RerankerConfig struct {
 
 // ConfigFromModel 根据 types.Model 构造 RerankerConfig。
 // 生产路径（从 DB 拉起）和测试连接路径（临时表单）共享这份映射。
-// appID / appSecret 是已解密的 WeKnoraCloud 凭证，调用方负责传入。
+// appID / appSecret 是已解密的凭证（LKEAP/Volcengine 等签名客户端使用），调用方负责传入。
 func ConfigFromModel(m *types.Model, appID, appSecret string) *RerankerConfig {
 	if m == nil {
 		return nil

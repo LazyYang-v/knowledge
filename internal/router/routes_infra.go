@@ -338,11 +338,5 @@ func RegisterDataSourceRoutes(
 	}
 }
 
-// RegisterWeKnoraCloudRoutes 注册 WeKnoraCloud 初始化路由
-// RegisterWeKnoraCloudRoutes registers the WeKnoraCloud credential
 // management endpoints. SaveCredentials persists external SaaS keys
 // for the tenant (Admin+), Status is a low-risk readiness probe (Viewer+).
-func RegisterWeKnoraCloudRoutes(r *gin.RouterGroup, handler *handler.WeKnoraCloudHandler, g *rbacGuards) {
-	g.apiKeyRoute(r, http.MethodPost, "/weknoracloud/credentials", apiKeyManageModels(apiKeyFullAccess()), g.Admin(), handler.SaveCredentials)
-	g.apiKeyRoute(r, http.MethodGet, "/models/weknoracloud/status", apiKeyManageModels(apiKeyFullAccess()), g.Viewer(), handler.Status)
-}

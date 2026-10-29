@@ -450,12 +450,6 @@ func TestEmbeddingWireFormatPerVendor(t *testing.T) {
 			wantAuth: [2]string{"Api-Key", "k"},
 			wantBody: openAIBody("my-deployment", three, map[string]any{"encoding_format": "float"}),
 		},
-		{
-			name: "weknoracloud signs its own path", provider: "weknoracloud",
-			model: "cloud-embedding", appID: "app",
-			wantPath: "/api/v1/embeddings", wantAuth: [2]string{"X-Appid", "app"},
-			wantBody: openAIBody("cloud-embedding", three, nil),
-		},
 	}
 
 	for _, tc := range cases {

@@ -61,10 +61,21 @@ func (r *stubMCPEndpointRepo) Delete(_ context.Context, tenantID uint64, id stri
 	return nil
 }
 
+// stubAgentService is a minimal interfaces.CustomAgentService stand-in for
+// the MCP endpoint tests.
+type stubAgentService struct {
+	interfaces.CustomAgentService
+	agent *types.CustomAgent
+}
+
+func (s *stubAgentService) GetAgentByID(_ context.Context, _ string) (*types.CustomAgent, error) {
+	return s.agent, nil
+}
+
 func newMCPEndpointServiceForTest(repo *stubMCPEndpointRepo, agent *types.CustomAgent) *mcpEndpointService {
 	return &mcpEndpointService{
 		repo:         repo,
-		agentService: &stubAgentForEmbed{agent: agent},
+		agentService: &stubAgentService{agent: agent},
 	}
 }
 

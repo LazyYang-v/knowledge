@@ -117,7 +117,7 @@
                   :mcp-tool-name="event.mcp_tool_name || ''" :description="event.description"
                   :args-json="event.args_json" :timeout-seconds="event.timeout_seconds"
                   :requested-at="event.requested_at" :resolved="event.resolved" :approved="event.approved"
-                  :resolve-reason="event.resolve_reason" v-bind="embedAuthProps" />
+                  :resolve-reason="event.resolve_reason" />
               </div>
 
               <!-- MCP OAuth in-conversation authorization prompt -->
@@ -127,7 +127,7 @@
                   :timeout-seconds="event.timeout_seconds" :requested-at="event.requested_at"
                   :resolved="event.resolved" :authorized="event.authorized"
                   :resolve-reason="event.resolve_reason" :timed-out="event.timed_out" :canceled="event.canceled"
-                  v-bind="embedAuthProps" />
+                  />
               </div>
 
               <!-- Tool Call Event (non-thinking) -->
@@ -341,7 +341,7 @@
               <ToolApprovalCard :pending-id="event.pending_id" :service-name="event.service_name || ''"
                 :mcp-tool-name="event.mcp_tool_name || ''" :description="event.description" :args-json="event.args_json"
                 :timeout-seconds="event.timeout_seconds" :requested-at="event.requested_at" :resolved="event.resolved"
-                :approved="event.approved" :resolve-reason="event.resolve_reason" v-bind="embedAuthProps" />
+                :approved="event.approved" :resolve-reason="event.resolve_reason" />
             </div>
 
             <!-- MCP OAuth in-conversation authorization prompt -->
@@ -350,7 +350,7 @@
                 :service-name="event.service_name || ''" :mcp-tool-name="event.mcp_tool_name || ''"
                 :timeout-seconds="event.timeout_seconds" :requested-at="event.requested_at" :resolved="event.resolved"
                 :authorized="event.authorized" :resolve-reason="event.resolve_reason" :timed-out="event.timed_out"
-                :canceled="event.canceled" v-bind="embedAuthProps" />
+                :canceled="event.canceled" />
             </div>
 
             <!-- Thinking Tool Call -->
@@ -987,10 +987,6 @@ const props = defineProps<{
   sessionId?: string;
   userQuery?: string;
   embeddedMode?: boolean;
-  embedChannelId?: string;
-  embedToken?: string;
-  embedSessionSig?: string;
-  embedVisitorId?: string;
   ragMode?: boolean;
   followUpLoading?: boolean;
   canFork?: boolean;
@@ -1016,15 +1012,6 @@ const emitRewind = () => {
   if (messageId) emit('rewind', messageId)
 }
 
-const embedAuthProps = computed(() => ({
-  embeddedMode: props.embeddedMode,
-  embedChannelId: props.embedChannelId,
-  embedToken: props.embedToken,
-  embedSessionId: props.sessionId,
-  embedSessionSig: props.embedSessionSig,
-  embedVisitorId: props.embedVisitorId,
-}));
-
 const showRequestInfo = computed(
   () => !props.embeddedMode && !!(props.session?.request_id || props.session?.id),
 );
@@ -1042,13 +1029,10 @@ const resolveAssistantMessageId = (session?: SessionData) =>
   String(session?.assistant_message_id || session?.id || '').trim();
 
 // Agent answers embed exported charts and knowledge-base images as
-// `resource://` handles. Embed visitors use the channel-scoped proxy. Logged-in
-// users use the persisted assistant message as the authorization anchor, which
-// also covers resources owned by a shared agent's source workspace.
+// `resource://` handles. Logged-in users use the persisted assistant message as
+// the authorization anchor, which also covers resources owned by a shared
+// agent's source workspace.
 const protectedFileAccess = computed<ProtectedFileAccessContext | undefined>(() => {
-  if (props.embeddedMode && props.embedChannelId && props.embedToken) {
-    return { mode: 'embed', channelId: props.embedChannelId, token: props.embedToken };
-  }
   const messageId = resolveAssistantMessageId(props.session);
   if (props.sessionId && messageId) {
     return { mode: 'message', sessionId: props.sessionId, messageId };
@@ -1122,8 +1106,6 @@ const {
   scheduleClose: scheduleCitationClose,
 } = useChatCitationPopover(rootElement, {
   getKnowledgeReferences: () => props.session?.knowledge_references,
-  embedChannelId: () => (props.embeddedMode ? props.embedChannelId : undefined),
-  embedToken: () => (props.embeddedMode ? props.embedToken : undefined),
   sessionId: () => props.sessionId,
 });
 

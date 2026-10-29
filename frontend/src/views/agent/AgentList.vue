@@ -1100,11 +1100,10 @@ const checkAndOpenEditModal = async () => {
   const editId = route.query.edit as string
   const section = route.query.section as string
   const sourceTenantId = route.query.sourceTenantId as string | undefined
-  if (editId && (section === 'im' || section === 'embed' || section === 'integrations' || section === 'integration-im' || section === 'integration-embed')) {
-    const tab = section === 'embed' || section === 'integration-embed' ? 'embed' : 'im'
+  if (editId && (section === 'im' || section === 'integrations' || section === 'integration-im')) {
     router.replace({
       path: '/platform/settings',
-      query: { section: integrationSectionKey(tab), agentId: editId },
+      query: { section: integrationSectionKey('im'), agentId: editId },
     })
     return
   }

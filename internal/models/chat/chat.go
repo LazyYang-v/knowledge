@@ -96,7 +96,7 @@ type ChatConfig struct {
 // ConfigFromModel 根据 types.Model 构造 ChatConfig。
 // 保证生产路径（service 层根据 DB 中的模型配置拉起实例）和测试路径
 // （handler 层根据前端表单临时拉起实例）走完全相同的字段映射。
-// appID / appSecret 是已经解密/解析好的 WeKnoraCloud 凭证，调用方负责传入。
+// appID / appSecret 是已解密的凭证（供需要签名的厂商客户端使用），调用方负责传入。
 func ConfigFromModel(m *types.Model, appID, appSecret string) *ChatConfig {
 	if m == nil {
 		return nil

@@ -85,7 +85,7 @@ type Session struct {
 	// Workspace ID
 	TenantID uint64 `json:"tenant_id"   gorm:"index"`
 	// UserID is the owner scope for this session. WeKnora user UUIDs, API
-	// external-user principals, and embed visitor principals all use this column.
+	// and API external-user principals all use this column.
 	UserID string `json:"user_id,omitempty" gorm:"type:varchar(512);index"`
 	// IsPinned indicates whether the session is pinned in the list.
 	IsPinned bool `json:"is_pinned" gorm:"default:false"`
@@ -208,7 +208,7 @@ const SessionSourceAPI = "api"
 const SessionSourceWeb = "web"
 
 // SessionListSourceRequiresAdmin reports whether a session-list source filter
-// exposes tenant-wide channel traffic (API / IM / embed) in the Web console.
+// exposes tenant-wide channel traffic (API / IM) in the Web console.
 func SessionListSourceRequiresAdmin(source string) bool {
 	src := strings.TrimSpace(source)
 	if src == "" || strings.EqualFold(src, SessionSourceWeb) {
@@ -224,10 +224,6 @@ func SessionRequiresAdminConsoleRead(s *Session, imPlatform string) bool {
 		return false
 	}
 	if IsAPISessionOwnerID(s.UserID) {
-		return true
-	}
-	if strings.HasPrefix(s.Description, EmbedSessionMarkerPrefix) ||
-		strings.HasPrefix(s.UserID, PrincipalEmbedSession+":") {
 		return true
 	}
 	// Defence in depth for skill maintenance transcripts: the listing hides
@@ -262,9 +258,9 @@ func SanitizeClientSessionDescription(incoming, existing string) string {
 // SessionListQuery bundles the parameters for listing sessions.
 // UserID empty means "tenant-wide" (used by API-key callers / legacy rows).
 // Keyword matches title ILIKE '%keyword%'.
-// Source values: "web" (user chats, no IM/embed), "embed" / "embed:{channelID}",
-// "api" (all API-key sessions, Admin+ only), or an IM platform name
-// (e.g. "feishu", "wechat"). IM and embed sources are also Admin+ only.
+// Source values: "web" (user chats, no IM channel), "api" (all API-key
+// sessions, Admin+ only), or an IM platform name (e.g. "feishu", "wechat").
+// IM sources are Admin+ only.
 // AgentID currently only filters sessions that have an IM channel mapping.
 type SessionListQuery struct {
 	TenantID uint64

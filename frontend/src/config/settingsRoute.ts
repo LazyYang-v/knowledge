@@ -31,8 +31,8 @@ function isBareIntegrationTab(section: string): section is IntegrationTab {
 
 /**
  * Map URL `section` (and a leftover `tab` from old bookmarks) onto the
- * settings nav key. Canonical form is `integration-<tab>`; `integrations`,
- * `api`, and bare tab names remain aliases.
+ * settings nav key. Canonical form is `integration-<tab>`; `integrations`
+ * and bare tab names remain aliases.
  */
 export function normalizeSettingsSection(section: string, tab?: string | null): string {
   if (section === 'integrations') {
@@ -46,7 +46,7 @@ export function normalizeSettingsSection(section: string, tab?: string | null): 
 
 /**
  * Settings left-nav → URL. Every page, including integrations, is
- * `?section=<navKey>` (e.g. `integration-claw`). `tab` is dropped.
+ * `?section=<navKey>` (e.g. `integration-mcpserver`). `tab` is dropped.
  */
 export function buildSettingsRouteQuery(
   sectionKey: string,

@@ -29,8 +29,6 @@ func TestBuildDeploymentCapabilitiesIncludesAllKeys(t *testing.T) {
 		Organizations: true,
 		Agents:        true,
 		IM:            true,
-		Embed:         true,
-		API:           true,
 		MCP:           true,
 		WebSearch:     true,
 		VectorStore:   true,

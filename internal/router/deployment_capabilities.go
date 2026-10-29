@@ -10,11 +10,8 @@ func deploymentCapabilitiesFromRouter(params RouterParams) handler.DeploymentCap
 		Organizations: params.OrganizationHandler != nil,
 		Agents:        params.CustomAgentHandler != nil,
 		IM:            params.IMHandler != nil,
-		// Match RegisterEmbedChannelRoutes: management routes depend on handler only.
-		Embed: params.EmbedChannelHandler != nil,
 		// Match RegisterMCPEndpointRoutes / RegisterMCPServerRoutes.
 		MCPServer: params.MCPEndpointHandler != nil && params.MCPServer != nil && params.MCPEndpointService != nil,
-		API:       params.TenantHandler != nil && params.TenantAPIKeyService != nil,
 		MCP: params.MCPServiceHandler != nil &&
 			params.MCPCredentialsHandler != nil &&
 			params.MCPOAuthHandler != nil,

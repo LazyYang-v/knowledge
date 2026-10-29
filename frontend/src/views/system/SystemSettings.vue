@@ -291,7 +291,6 @@ const HIGH_RISK_KEYS = new Set<string>([
 
 const HIGH_IMPACT_KEYS = new Set<string>([
   'auth.registration_mode',
-  'tenant.auto_create_api_key',
   'ssrf.whitelist',
   'sandbox.docker_enabled',
 ])
@@ -391,8 +390,7 @@ const SETTINGS_SECTION_KEYS: Record<Exclude<SettingsSection, 'other' | 'users'>,
   ],
   tenant: [
     'tenant.default_storage_quota_gb',
-    'tenant.auto_create_api_key',
-    'tenant.auto_accept_invitation',
+      'tenant.auto_accept_invitation',
   ],
   runtime: [
     'asynq.core_concurrency',

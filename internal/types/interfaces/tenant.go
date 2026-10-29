@@ -36,8 +36,6 @@ type TenantService interface {
 	SearchTenants(ctx context.Context, keyword string, tenantID uint64, page, pageSize int) ([]*types.Tenant, int64, error)
 	// GetTenantByIDForUser gets a tenant by ID with permission check
 	GetTenantByIDForUser(ctx context.Context, tenantID uint64, userID string) (*types.Tenant, error)
-	// GetWeKnoraCloudCredentials returns the decrypted WeKnoraCloud credentials for the current tenant.
-	GetWeKnoraCloudCredentials(ctx context.Context) *types.WeKnoraCloudCredentials
 }
 
 // TenantRepository defines the tenant repository interface
@@ -62,41 +60,8 @@ type TenantRepository interface {
 	BulkSetStorageQuota(ctx context.Context, quotaBytes int64) (int64, error)
 }
 
-type TenantAPIKeyCreateRequest struct {
-	TenantID         uint64
-	ScopeType        types.APIKeyScopeType
-	Name             string
-	FullAccess       bool
-	KnowledgeBaseIDs []string
-	Capabilities     []string
-	ExpiresAt        *time.Time
-}
-
-type TenantAPIKeyCreateResult struct {
-	APIKey *types.TenantAPIKey
-	Token  string
-}
-
-// TenantAPIKeyUpdateRequest 修改已创建租户 API Key 的可配置属性。
-// 配置语义与创建接口一致：FullAccess 为 true 时忽略细粒度能力和知识库范围。
-type TenantAPIKeyUpdateRequest struct {
-	TenantID         uint64
-	APIKeyID         uint64
-	Name             string
-	FullAccess       bool
-	KnowledgeBaseIDs []string
-	Capabilities     []string
-	ExpiresAt        *time.Time
-}
-
 type TenantAPIKeyRepository interface {
-	CreateAPIKey(ctx context.Context, key *types.TenantAPIKey) error
 	GetAPIKeyByHash(ctx context.Context, hash string) (*types.TenantAPIKey, error)
-	ListAPIKeys(ctx context.Context, tenantID uint64) ([]*types.TenantAPIKey, error)
-	ListPlatformAPIKeys(ctx context.Context) ([]*types.TenantAPIKey, error)
-	UpdateAPIKey(ctx context.Context, tenantID uint64, id uint64, key *types.TenantAPIKey) (*types.TenantAPIKey, error)
-	RevokeAPIKey(ctx context.Context, tenantID uint64, id uint64) error
-	RevokePlatformAPIKey(ctx context.Context, id uint64) error
 	UpdateAPIKeyHash(ctx context.Context, id uint64, hash string) error
 	UpdateAPIKeyLastUsed(ctx context.Context, id uint64, at time.Time) error
 	// ListKeysWithPlaceholderHash returns keys whose key_hash is still the
@@ -109,13 +74,7 @@ type TenantAPIKeyRepository interface {
 }
 
 type TenantAPIKeyService interface {
-	CreateAPIKey(ctx context.Context, req TenantAPIKeyCreateRequest) (*TenantAPIKeyCreateResult, error)
 	AuthenticateAPIKey(ctx context.Context, token string) (*types.TenantAPIKey, error)
-	ListAPIKeys(ctx context.Context, tenantID uint64) ([]*types.TenantAPIKey, error)
-	ListPlatformAPIKeys(ctx context.Context) ([]*types.TenantAPIKey, error)
-	UpdateAPIKey(ctx context.Context, req TenantAPIKeyUpdateRequest) (*types.TenantAPIKey, error)
-	RevokeAPIKey(ctx context.Context, tenantID uint64, id uint64) error
-	RevokePlatformAPIKey(ctx context.Context, id uint64) error
 	// BackfillMissingKeyHashes computes and persists the SHA-256 key_hash
 	// for legacy keys still carrying the migration placeholder.
 	// Returns the number of keys backfilled.

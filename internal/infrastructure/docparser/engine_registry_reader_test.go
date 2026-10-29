@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/Tencent/WeKnora/internal/infrastructure/docparser/anydoc"
-	"github.com/Tencent/WeKnora/internal/types"
 	"github.com/Tencent/WeKnora/internal/types/interfaces"
 )
 
@@ -59,15 +58,6 @@ func TestNewReaderRoutesByEngine(t *testing.T) {
 func TestNewReaderReportsDisconnectedDocReader(t *testing.T) {
 	if _, err := NewReader(context.Background(), BuiltinEngineName, "docx", false, ReaderDeps{}); err == nil {
 		t.Fatal("NewReader succeeded without a docreader connection, want an error")
-	}
-}
-
-func TestNewReaderRequiresWeKnoraCloudCredentials(t *testing.T) {
-	_, err := NewReader(context.Background(), WeKnoraCloudEngineName, "docx", false, ReaderDeps{
-		WeKnoraCloudCredentials: func(context.Context) *types.WeKnoraCloudCredentials { return nil },
-	})
-	if err == nil {
-		t.Fatal("NewReader succeeded without credentials, want an error")
 	}
 }
 

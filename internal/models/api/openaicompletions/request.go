@@ -177,7 +177,7 @@ func (c *Client) convertMessages(messages []api.Message) []wireMessage {
 }
 
 // contentParts flattens rich content to plain text for vendors that only
-// accept strings (WeKnora Cloud), otherwise returns the parts as-is.
+// accept strings, otherwise returns the parts as-is.
 func (c *Client) contentParts(parts []wirePart) any {
 	if c.cfg.Settings.SupportsMultiContent {
 		return parts

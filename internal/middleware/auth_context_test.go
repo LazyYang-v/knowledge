@@ -30,7 +30,7 @@ func TestApplyAuthSessionSetsBothSurfaces(t *testing.T) {
 		Role:        types.TenantRoleAdmin,
 		SystemAdmin: true,
 		APIKeyScope: scope,
-		Extra:       map[types.ContextKey]any{types.EmbedChannelContextKey: &types.EmbedChannel{ID: "ch"}},
+		Extra:       map[types.ContextKey]any{types.MCPEndpointContextKey: &types.MCPEndpoint{ID: "ep-1"}},
 	})
 
 	ctx := c.Request.Context()
@@ -68,11 +68,11 @@ func TestApplyAuthSessionSetsBothSurfaces(t *testing.T) {
 	if got, ok := types.TenantAPIKeyScopeFromContext(ctx); !ok || got.KeyID != 3 {
 		t.Fatalf("ctx api key scope = %#v, ok=%v", got, ok)
 	}
-	if ch, ok := EmbedChannelFromContext(ctx); !ok || ch.ID != "ch" {
-		t.Fatalf("ctx embed channel = %#v, ok=%v", ch, ok)
+	if ep, ok := MCPEndpointFromContext(ctx); !ok || ep.ID != "ep-1" {
+		t.Fatalf("ctx mcp endpoint = %#v, ok=%v", ep, ok)
 	}
-	if got, ok := c.Get(types.EmbedChannelContextKey.String()); !ok || got.(*types.EmbedChannel).ID != "ch" {
-		t.Fatalf("keys embed channel = %v, ok=%v", got, ok)
+	if got, ok := c.Get(types.MCPEndpointContextKey.String()); !ok || got.(*types.MCPEndpoint).ID != "ep-1" {
+		t.Fatalf("keys mcp endpoint = %v, ok=%v", got, ok)
 	}
 }
 

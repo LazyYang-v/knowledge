@@ -59,19 +59,17 @@ func (r *sessionRepository) Get(ctx context.Context, tenantID uint64, userID str
 
 // webSessionPredicate selects the "web" bucket of the session list: the
 // user's own web chats. It excludes IM sessions (any im_channel_sessions
-// mapping, including soft-deleted ones), embed-widget sessions (same IM-null
-// row) and API-key sessions (surfaced only in the admin-only "api" bucket).
-// The user_id NULL check keeps legacy tenant-level web rows visible, since
-// "col NOT LIKE ?" is unknown (not true) for NULL.
+// mapping, including soft-deleted ones) and API-key sessions (surfaced only
+// in the admin-only "api" bucket). The user_id NULL check keeps legacy
+// tenant-level web rows visible, since "col NOT LIKE ?" is unknown (not
+// true) for NULL.
 //
 // It expects sessions aliased as s and a
 // "LEFT JOIN im_channel_sessions ics ON ics.session_id = s.id".
-const webSessionPredicate = "ics.id IS NULL AND (s.description = '' OR s.description NOT LIKE ?) " +
-	"AND (s.user_id IS NULL OR (s.user_id NOT LIKE ? AND s.user_id NOT LIKE ?))"
+const webSessionPredicate = "ics.id IS NULL AND (s.user_id IS NULL OR (s.user_id NOT LIKE ? AND s.user_id NOT LIKE ?))"
 
 func webSessionPredicateArgs() []any {
 	return []any{
-		types.EmbedSessionMarkerPrefix + "%",
 		types.SessionOwnerAPITenantKeyPrefix + "%",
 		types.SessionOwnerAPIExternalUserPrefix + "%",
 	}
@@ -213,7 +211,6 @@ func (r *sessionRepository) QueryPaged(
 	applySource := func(db *gorm.DB) *gorm.DB {
 		src := strings.TrimSpace(q.Source)
 		lower := strings.ToLower(src)
-		embedPrefix := types.EmbedSessionMarkerPrefix
 		switch lower {
 		case "":
 			return db
@@ -230,15 +227,7 @@ func (r *sessionRepository) QueryPaged(
 			)
 		case "web":
 			return db.Where(webSessionPredicate, webSessionPredicateArgs()...)
-		case "embed":
-			return db.Where("ics.id IS NULL AND s.description LIKE ?", embedPrefix+"%")
 		default:
-			if strings.HasPrefix(lower, "embed:") {
-				channelID := strings.TrimSpace(src[len("embed:"):])
-				if channelID != "" {
-					return db.Where("ics.id IS NULL AND s.description = ?", embedPrefix+channelID)
-				}
-			}
 			return db.Where("ics.platform = ?", lower)
 		}
 	}

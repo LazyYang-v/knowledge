@@ -61,11 +61,9 @@ test('prependSessionToWebBucket is idempotent for existing session', () => {
 test('buildBucketDefinitions hides channel buckets unless admin', () => {
   const defs = buildBucketDefinitions(
     ['feishu'],
-    { ch1: 'Embed' },
     {
       web: 'Chats',
       imPlatform: (platform) => platform,
-      embedChannel: (name) => name,
       api: 'API',
     },
   )
@@ -73,17 +71,15 @@ test('buildBucketDefinitions hides channel buckets unless admin', () => {
 
   const adminDefs = buildBucketDefinitions(
     ['feishu'],
-    { ch1: 'Embed' },
     {
       web: 'Chats',
       imPlatform: (platform) => platform,
-      embedChannel: (name) => name,
       api: 'API',
     },
     { includeAdminChannelBuckets: true },
   )
   assert.deepEqual(
     adminDefs.map((def) => def.key),
-    ['im:feishu', 'embed:ch1', 'api', 'web'],
+    ['im:feishu', 'api', 'web'],
   )
 })

@@ -11,7 +11,6 @@ WeKnora 由三个可独立开发的进程组成：
 | 主后端 `app` | `cmd/server` + `internal/` | Go | **Go 1.26.0**（`go.mod` 中 `go 1.26.0`），需 CGO（DuckDB、sqlite-vec 绑定） |
 | 文档解析服务 `docreader` | `docreader/` | Python + gRPC | **Python >= 3.10.18**（`docreader/pyproject.toml` 中 `requires-python`），依赖用 **uv** 管理（仓库含 `uv.lock`，Docker 内 `uv sync --locked`） |
 | 前端 `frontend` | `frontend/` | Node.js + Vue 3 | Node 22 系（`devDependencies` 含 `@tsconfig/node22`、`@types/node ^22`），Vite 7 + TypeScript ~6.0 + Vue 3.5 + TDesign，版本号 `0.8.2` |
-| CLI | `cli/`（独立 Go module） | Go | Go 1.26（`.github/workflows/cli.yml` 矩阵 `go: ['1.26']`） |
 
 推荐额外安装的开发工具：
 
@@ -194,22 +193,6 @@ uv run python -m unittest discover -s tests -v      # 全部
 uv run python -m unittest tests.test_parser_routing  # 单个
 ```
 
-### CLI 测试与验收测试 {#_4-3-cli-测试与验收测试}
-
-`cli/` 是独立 Go module，自带 `cli/Makefile`：
-
-```bash
-cd cli
-make test            # go test ./...
-make test-coverage   # 带覆盖率
-make lint            # go vet
-```
-
-跨切面的契约/集成测试集中在 `cli/acceptance/`（见 `cli/acceptance/doc.go`）：
-
-- `cli/acceptance/contract/` — envelope JSON 输出形状 golden 测试 + error.code 注册表一致性；
-- `cli/acceptance/e2e/` — 对真实 WeKnora server 的黑盒测试（testscript 风格），需要环境变量指向测试服务器；CI 侧由 `.github/workflows/cli-e2e.yml` 承载，**按需触发**（`workflow_dispatch` 手动，或给 PR 打 `acceptance-e2e` 标签），使用 secrets `WEKNORA_E2E_HOST` / `WEKNORA_E2E_TOKEN`。
-
 ### tests/ 目录与前端测试 {#_4-4-tests-目录与前端测试}
 
 - `tests/miniprogram/miniprogram.test.js` — 小程序客户端的集成测试（Node 测试脚本），是 `tests/` 目前唯一内容；
@@ -261,8 +244,6 @@ make fmt && make lint && make test
 | `workflows/frontend.yml` | `frontend/`、`scripts/build_frontend_dist.sh` | Node 24：`npm test` + `npm run type-check` + `npm run build`；另构建 `frontend/Dockerfile` 多阶段镜像（不推送），并验证镜像内嵌入页与 MCP 代理路由（`scripts/test_embed_nginx.py`） |
 | `workflows/docreader.yml` | `docreader/`、`testdata/`、`packages/`、相关 Dockerfile | uv 装依赖 → `compileall` → `unittest discover docreader/tests`；再拉起 docreader gRPC 服务跑 `go test ./docreader/client ./docreader/proto` |
 | `workflows/mcp-server.yml` | `mcp-server/` | Python 3.10-3.13 矩阵测试；合入 main 后按 `pyproject.toml` 里的版本号用 PyPI Trusted Publishing 自动发布（版本已存在则跳过上传，不依赖打 tag） |
-| `workflows/cli.yml` | `cli/` | ubuntu/macos/windows 三平台矩阵，Go 1.26，`go build` + `go test -race -coverprofile` + `go vet` + skill wire 词表检查 |
-| `workflows/cli-e2e.yml` | 手动 / label | CLI 端到端验收（label `acceptance-e2e` 或手动触发，见 4.3） |
 | `workflows/docker-image.yml` | — | Docker 镜像构建发布 |
 | `workflows/release-lite.yml` | — | Lite 版本发布 |
 | `workflows/anydoc.yml` | `third_party/anydoc-go/`、`internal/infrastructure/docparser/` | 进程内 Office 解析引擎构建与测试 |

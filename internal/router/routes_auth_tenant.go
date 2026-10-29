@@ -16,7 +16,6 @@ import (
 //   - GET   /:id          Viewer+ (read tenant settings)
 //   - PUT   /:id          Owner+ (mutate tenant config)
 //   - DELETE /:id         Owner+ (also normally a CanAccessAllTenants op)
-//   - GET/POST/PUT/DELETE /:id/api-keys   Owner+ (scoped API key management)
 //   - GET    /:id/members            Viewer+ (any member can see who else is in)
 //   - POST   /:id/members            Owner+ (only Owner can add new members)
 //   - PUT    /:id/members/:user_id   Owner+ (only Owner can change roles)
@@ -94,14 +93,6 @@ func RegisterTenantRoutes(
 				apiKeyPlatform(types.APIKeyCapabilitySystemTenantsManage), g.Owner(), handler.UpdateTenant)
 			g.apiKeyRoute(tenantByID, http.MethodDelete, "",
 				apiKeyPlatform(types.APIKeyCapabilitySystemTenantsManage), g.Owner(), handler.DeleteTenant)
-			tenantByID.GET("/api-keys", g.Owner(), handler.ListAPIKeys)
-			tenantByID.POST("/api-keys", g.Owner(), handler.CreateAPIKey)
-			tenantByID.PUT("/api-keys/:key_id", g.Owner(), handler.UpdateAPIKey)
-			tenantByID.DELETE("/api-keys/:key_id", g.Owner(), handler.DeleteAPIKey)
-			tenantByID.GET("/api-principal-config", g.Owner(), handler.GetAPIPrincipalConfig)
-			tenantByID.PUT("/api-principal-config", g.Owner(), handler.UpdateAPIPrincipalConfig)
-			tenantByID.POST("/api-principal-test-token", g.Owner(), handler.CreateAPIPrincipalTestToken)
-
 			// Tenant member management (PR 3 of #1303). Listing is
 			// Viewer+ so any active member can see the roster; mutation
 			// is Owner+ because membership changes are the highest-impact
@@ -302,10 +293,6 @@ func RegisterSystemAdminRoutes(
 		adminRoutes.POST("/users/status", handler.SetUserStatus)
 		adminRoutes.POST("/users/reset-password", handler.ResetUserPassword)
 		adminRoutes.POST("/users/create", handler.CreateSystemUser)
-		adminRoutes.GET("/api-keys", handler.ListPlatformAPIKeys)
-		adminRoutes.POST("/api-keys", handler.CreatePlatformAPIKey)
-		adminRoutes.DELETE("/api-keys/:key_id", handler.DeletePlatformAPIKey)
-
 		// P1: platform-wide system settings (DB-backed runtime tunables).
 		// Reads return raw model rows / arrays (no `gin.H{"data":...}`
 		// wrapping), matching the project's axios interceptor convention

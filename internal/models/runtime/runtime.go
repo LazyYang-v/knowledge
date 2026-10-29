@@ -32,7 +32,7 @@ func (rt *Runtime) Reload(data []byte, baseDir string) error {
 func validateDefinition(v *Provider) error {
 	switch v.Auth {
 	case providers.AuthBearer, providers.AuthAPIKeyHeader, providers.AuthXAPIKey,
-		providers.AuthGoogleAPIKey, providers.AuthNone, providers.AuthSigned:
+		providers.AuthGoogleAPIKey, providers.AuthNone:
 	default:
 		return fmt.Errorf("unknown auth style %q", v.Auth)
 	}

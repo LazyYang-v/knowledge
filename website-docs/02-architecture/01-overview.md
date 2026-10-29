@@ -93,7 +93,7 @@ graph LR
     subgraph Clients["客户端"]
         Browser["浏览器 (Vue3 SPA)"]
         Mini["微信小程序 (miniprogram/)"]
-        CLI["CLI / Go SDK (cli/, client/)"]
+        SDK["Go SDK (client/)"]
         MCPC["MCP 客户端 (内置端点 / mcp-server/)"]
         EXTN["Chrome 扩展 (本机浏览器)"]
         IM["IM 平台 (微信/飞书/钉钉/Slack...)"]
@@ -120,7 +120,6 @@ graph LR
 
     Browser -->|"HTTP / SSE"| FE
     Mini -->|"HTTP"| APP
-    CLI -->|"HTTP"| APP
     MCPC -->|"Streamable HTTP / HTTP (X-API-Key)"| APP
     EXTN -->|"WebSocket"| APP
     IM -->|"webhook / SDK 长连接"| APP
@@ -187,7 +186,6 @@ sequenceDiagram
 | `internal/` | Go 后端全部业务代码（分层结构见后端设计篇）：`handler`、`application/service`、`application/repository`、`container`（DI）、`router`、`middleware`、`types`、`agent`、`im`、`mcp`、`stream`、`sandbox` 等 |
 | `frontend/` | Vue3 + Vite + TDesign 的 Web 前端，构建产物由 NGINX 或 Lite 模式内嵌托管 |
 | `docreader/` | Python gRPC 文档解析微服务：`main.py` 服务端入口、`parser/` 25+ 解析器、`splitter/` 分割器、`proto/` 协议定义、独立 `Dockerfile.docreader` 构建 |
-| `cli/` | `weknora` 命令行工具：知识库、文档、检索、会话、智能体、模型、MCP、技能等资源操作，以及 `doctor` 诊断，见 [CLI](../05-clients/02-cli.md) |
 | `client/` | Go SDK：以 HTTP 客户端形式封装 WeKnora API，供二次开发集成 |
 | `mcp-server/` | Python 实现的 MCP Server（`weknora_mcp_server.py`），把 WeKnora API 暴露为 MCP 工具给 Claude 等 MCP 客户端 |
 | `miniprogram/` | 微信小程序客户端（WXML/WXSS/JS） |

@@ -223,29 +223,6 @@ func TestSessionRepositoryQueryPagedKeepsClearedIMSessionsOutOfWeb(t *testing.T)
 		"wecom must include both the active and the cleared IM session")
 }
 
-func TestSessionRepositoryQueryPagedSplitsWebAndEmbedSessions(t *testing.T) {
-	repo, db := newSessionRepositoryForTest(t)
-	require.NoError(t, db.AutoMigrate(&testIMChannelSession{}))
-	ctx := context.Background()
-
-	web := createSessionForTest(t, db, 1, "alice")
-	embed := createSessionForTest(t, db, 1, "alice")
-	require.NoError(t, db.Model(&types.Session{}).Where("id = ?", embed.ID).
-		Update("description", types.EmbedSessionMarkerPrefix+"ch-1").Error)
-
-	webItems, _, err := repo.QueryPaged(ctx, &types.SessionListQuery{
-		TenantID: 1, UserID: "alice", Source: "web", Page: 1, PageSize: 50,
-	})
-	require.NoError(t, err)
-	require.Equal(t, []string{web.ID}, listItemIDsForTest(webItems))
-
-	embedItems, _, err := repo.QueryPaged(ctx, &types.SessionListQuery{
-		TenantID: 1, UserID: "alice", Source: "embed:ch-1", Page: 1, PageSize: 50,
-	})
-	require.NoError(t, err)
-	require.Equal(t, []string{embed.ID}, listItemIDsForTest(embedItems))
-}
-
 // The "web" source is user chats only; API-key sessions live in the
 // admin-only "api" bucket and must never leak into a tenant-wide web listing.
 // Legacy tenant-level rows (user_id "") must still show up in web.

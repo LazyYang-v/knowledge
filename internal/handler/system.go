@@ -45,7 +45,6 @@ type SystemHandler struct {
 	userSvc          interfaces.UserService
 	modelCatalogSvc  *service.ModelCatalogService
 	systemSettingSvc interfaces.SystemSettingService
-	apiKeySvc        interfaces.TenantAPIKeyService
 	// auditSvc is optional — when nil, emitAdminAudit no-ops so unit
 	// tests that wire a partial container still compile. In production
 	// the dig graph always provides one.
@@ -77,7 +76,6 @@ func NewSystemHandler(cfg *config.Config,
 	userSvc interfaces.UserService,
 	systemSettingSvc interfaces.SystemSettingService,
 	modelCatalogSvc *service.ModelCatalogService,
-	apiKeySvc interfaces.TenantAPIKeyService,
 	auditSvc interfaces.AuditLogService,
 	taskInspector interfaces.TaskInspector,
 	knowledgeSvc interfaces.KnowledgeService,
@@ -92,142 +90,12 @@ func NewSystemHandler(cfg *config.Config,
 		userSvc:            userSvc,
 		systemSettingSvc:   systemSettingSvc,
 		modelCatalogSvc:    modelCatalogSvc,
-		apiKeySvc:          apiKeySvc,
 		auditSvc:           auditSvc,
 		taskInspector:      taskInspector,
 		knowledgeSvc:       knowledgeSvc,
 		storageBackendRepo: storageBackendRepo,
 		sandboxConfigSvc:   sandboxConfigSvc,
 	}
-}
-
-type platformAPIKeyCreateRequest struct {
-	Name         string   `json:"name"`
-	Capabilities []string `json:"capabilities"`
-	ExpiresAt    *int64   `json:"expires_at_unix"`
-}
-
-// ListPlatformAPIKeys godoc
-// @Summary      List platform API keys
-// @Description  Lists non-workspace API keys. Full tokens are always masked. Human SystemAdmin only.
-// @Tags         System Admin
-// @Produce      json
-// @Success      200 {object} map[string]interface{}
-// @Security     Bearer
-// @Router       /system/admin/api-keys [get]
-func (h *SystemHandler) ListPlatformAPIKeys(c *gin.Context) {
-	keys, err := h.apiKeySvc.ListPlatformAPIKeys(c.Request.Context())
-	if err != nil {
-		c.Error(apperrors.NewInternalServerError("Failed to list platform API keys").WithDetails(err.Error()))
-		return
-	}
-	response := make([]tenantAPIKeyResponse, 0, len(keys))
-	for _, key := range keys {
-		item := tenantAPIKeyForResponse(key)
-		item.APIKey = maskManagedAPIKey(key.APIKey)
-		response = append(response, item)
-	}
-	c.JSON(http.StatusOK, gin.H{"success": true, "data": response})
-}
-
-// CreatePlatformAPIKey godoc
-// @Summary      Create a platform API key
-// @Description  Creates a capability-scoped key that may target any workspace through X-Tenant-ID. The plaintext token is returned once. Human SystemAdmin only.
-// @Tags         System Admin
-// @Accept       json
-// @Produce      json
-// @Param        request body platformAPIKeyCreateRequest true "Platform API key"
-// @Success      201 {object} map[string]interface{}
-// @Security     Bearer
-// @Router       /system/admin/api-keys [post]
-func (h *SystemHandler) CreatePlatformAPIKey(c *gin.Context) {
-	var req platformAPIKeyCreateRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.Error(apperrors.NewValidationError("Invalid request data").WithDetails(err.Error()))
-		return
-	}
-	if strings.TrimSpace(req.Name) == "" {
-		c.Error(apperrors.NewValidationError("name is required"))
-		return
-	}
-	capabilities := types.NormalizeAPIKeyCapabilities(types.StringArray(req.Capabilities))
-	if len(capabilities) == 0 || len(capabilities) != len(req.Capabilities) {
-		c.Error(apperrors.NewValidationError("valid capabilities are required"))
-		return
-	}
-	var expiresAt *time.Time
-	if req.ExpiresAt != nil {
-		value := time.Unix(*req.ExpiresAt, 0).UTC()
-		if !value.After(time.Now().UTC()) {
-			c.Error(apperrors.NewValidationError("expires_at_unix must be in the future"))
-			return
-		}
-		expiresAt = &value
-	}
-	result, err := h.apiKeySvc.CreateAPIKey(c.Request.Context(), interfaces.TenantAPIKeyCreateRequest{
-		ScopeType:    types.APIKeyScopePlatform,
-		Name:         req.Name,
-		Capabilities: []string(capabilities),
-		ExpiresAt:    expiresAt,
-	})
-	if err != nil {
-		c.Error(apperrors.NewInternalServerError("Failed to create platform API key").WithDetails(err.Error()))
-		return
-	}
-	item := tenantAPIKeyForResponse(result.APIKey)
-	item.APIKey = maskManagedAPIKey(result.Token)
-	h.emitAPIKeyAudit(c.Request.Context(), types.AuditActionSystemAPIKeyCreated, result.APIKey)
-	c.JSON(http.StatusCreated, gin.H{
-		"success": true,
-		"data":    tenantAPIKeyCreateResponse{tenantAPIKeyResponse: item, Token: result.Token},
-	})
-}
-
-// DeletePlatformAPIKey godoc
-// @Summary      Revoke a platform API key
-// @Description  Immediately revokes a platform API key. Human SystemAdmin only.
-// @Tags         System Admin
-// @Produce      json
-// @Param        key_id path int true "API key ID"
-// @Success      200 {object} map[string]interface{}
-// @Security     Bearer
-// @Router       /system/admin/api-keys/{key_id} [delete]
-func (h *SystemHandler) DeletePlatformAPIKey(c *gin.Context) {
-	id, err := strconv.ParseUint(c.Param("key_id"), 10, 64)
-	if err != nil || id == 0 {
-		c.Error(apperrors.NewBadRequestError("Invalid API key ID"))
-		return
-	}
-	if err := h.apiKeySvc.RevokePlatformAPIKey(c.Request.Context(), id); err != nil {
-		c.Error(apperrors.NewNotFoundError("Platform API key not found"))
-		return
-	}
-	h.emitAPIKeyAudit(c.Request.Context(), types.AuditActionSystemAPIKeyRevoked, &types.TenantAPIKey{ID: id})
-	c.JSON(http.StatusOK, gin.H{"success": true})
-}
-
-func maskManagedAPIKey(token string) string {
-	token = strings.TrimSpace(token)
-	if len(token) <= 12 {
-		return "***"
-	}
-	return token[:7] + "..." + token[len(token)-4:]
-}
-
-func (h *SystemHandler) emitAPIKeyAudit(ctx context.Context, action types.AuditAction, key *types.TenantAPIKey) {
-	if h.auditSvc == nil || key == nil {
-		return
-	}
-	actorID, _ := types.UserIDFromContext(ctx)
-	details, _ := json.Marshal(map[string]any{
-		"scope_type":   types.APIKeyScopePlatform,
-		"capabilities": key.Capabilities,
-	})
-	_ = h.auditSvc.Log(ctx, &types.AuditLog{
-		TenantID: 0, ActorUserID: actorID, ActorRole: systemAuditActorRole(ctx),
-		Action: action, TargetType: "api_key", TargetID: strconv.FormatUint(key.ID, 10),
-		Outcome: types.AuditOutcomeSuccess, Details: types.JSON(details),
-	})
 }
 
 func systemAuditActorRole(ctx context.Context) string {
@@ -407,12 +275,6 @@ func (h *SystemHandler) ListParserEngines(c *gin.Context) {
 			if tenant.ParserEngineConfig != nil {
 				overrides = tenant.ParserEngineConfig.ToOverridesMap()
 			}
-			if creds := tenant.Credentials.GetWeKnoraCloud(); creds != nil {
-				if overrides == nil {
-					overrides = make(map[string]string)
-				}
-				overrides["weknoracloud_app_id"] = creds.AppID
-			}
 		}
 	}
 
@@ -469,12 +331,6 @@ func (h *SystemHandler) ReconnectDocReader(c *gin.Context) {
 			if tenant.ParserEngineConfig != nil {
 				overrides = tenant.ParserEngineConfig.ToOverridesMap()
 			}
-			if creds := tenant.Credentials.GetWeKnoraCloud(); creds != nil {
-				if overrides == nil {
-					overrides = make(map[string]string)
-				}
-				overrides["weknoracloud_app_id"] = creds.AppID
-			}
 		}
 	}
 	remoteEngines := h.fetchRemoteEngines(c.Request.Context(), h.documentReader, overrides)
@@ -500,23 +356,13 @@ func (h *SystemHandler) CheckParserEngines(c *gin.Context) {
 		return
 	}
 	var existing *types.ParserEngineConfig
-	var tenant *types.Tenant
 	if v, exists := c.Get(types.TenantInfoContextKey.String()); exists {
 		if t, ok := v.(*types.Tenant); ok && t != nil {
-			tenant = t
 			existing = t.ParserEngineConfig
 		}
 	}
 	merged := types.MergeParserEngineConfigForUpdate(&body, existing)
 	overrides := merged.ToOverridesMap()
-	if tenant != nil {
-		if creds := tenant.Credentials.GetWeKnoraCloud(); creds != nil {
-			if overrides == nil {
-				overrides = make(map[string]string)
-			}
-			overrides["weknoracloud_app_id"] = creds.AppID
-		}
-	}
 	reader, docreaderAddr, docreaderTransport := h.resolveDocReader(c.Request.Context(), overrides)
 	connected := reader != nil && reader.IsConnected()
 	remoteEngines := h.fetchRemoteEngines(c.Request.Context(), reader, overrides)
@@ -525,13 +371,6 @@ func (h *SystemHandler) CheckParserEngines(c *gin.Context) {
 }
 
 func (h *SystemHandler) resolveDocReader(ctx context.Context, overrides map[string]string) (interfaces.DocumentReader, string, string) {
-	if len(overrides) > 0 {
-		if addr := strings.TrimSpace(overrides["docreader_addr"]); addr != "" && service.IsWeKnoraCloudDocReaderAddr(addr) {
-			reader := h.ResolveDocumentReader(ctx, addr)
-			return reader, addr, transportFromDocReaderAddr(addr)
-		}
-	}
-
 	addr, transport := h.getDocReaderConnInfo()
 	return h.documentReader, addr, transport
 }
@@ -1258,18 +1097,6 @@ func (h *SystemHandler) checkOBS(c *gin.Context, ctx context.Context, cfg *types
 func (h *SystemHandler) ResolveDocumentReader(ctx context.Context, addr string) interfaces.DocumentReader {
 	if addr == "" {
 		return h.documentReader
-	}
-
-	if service.IsWeKnoraCloudDocReaderAddr(addr) {
-		creds := h.tenantSvc.GetWeKnoraCloudCredentials(ctx)
-		if creds == nil {
-			return nil
-		}
-		reader, err := docparser.NewWeKnoraCloudSignedDocumentReader(creds.AppID, creds.AppSecret)
-		if err != nil {
-			return nil
-		}
-		return reader
 	}
 
 	reader, err := docparser.NewHTTPDocumentReader(addr)

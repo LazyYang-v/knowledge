@@ -1,11 +1,11 @@
-// OpenAI-style sidebar: channel folders (IM / embed) + flat/date-grouped chats,
+// OpenAI-style sidebar: channel folders (IM) + flat/date-grouped chats,
 // each bucket paginates independently via the API `source` param.
 
 import type { SessionForGrouping } from './sessionGrouping'
 
 export const SIDEBAR_BUCKET_PAGE_SIZE = 30
 
-export type SidebarBucketKind = 'web' | 'im' | 'embed' | 'api'
+export type SidebarBucketKind = 'web' | 'im' | 'api'
 
 export interface SidebarSessionBucket {
   key: string
@@ -60,25 +60,23 @@ export function applyBucketCountProbe(
 }
 
 export function isChannelBucket(bucket: SidebarSessionBucket): boolean {
-  return bucket.kind === 'im' || bucket.kind === 'embed' || bucket.kind === 'api'
+  return bucket.kind === 'im' || bucket.kind === 'api'
 }
 
 export function isChannelBucketKey(key: string): boolean {
-  return key.startsWith('im:') || key.startsWith('embed:') || key === API_SESSION_BUCKET_KEY
+  return key.startsWith('im:') || key === API_SESSION_BUCKET_KEY
 }
 
 // API_SESSION_BUCKET_KEY is the admin-only bucket that lists every API-key
-// session in the tenant. IM and embed folders are also admin-only; they are
+// session in the tenant. IM folders are also admin-only; they are
 // probed for a count first and only surfaced when they have sessions.
 export const API_SESSION_BUCKET_KEY = 'api'
 
 export function buildBucketDefinitions(
   imPlatforms: string[],
-  embedChannels: Record<string, string>,
   labels: {
     web: string
     imPlatform: (platform: string) => string
-    embedChannel: (name: string) => string
     api: string
   },
   options: { includeAdminChannelBuckets?: boolean } = {},
@@ -93,14 +91,6 @@ export function buildBucketDefinitions(
         platform,
       }))
     : []
-  const embedDefs = includeChannels
-    ? Object.entries(embedChannels).map(([id, name]) => ({
-        key: `embed:${id}`,
-        apiSource: `embed:${id}`,
-        label: labels.embedChannel(name || id.slice(0, 8)),
-        kind: 'embed' as const,
-      }))
-    : []
   const apiDefs: BucketDefinition[] = includeChannels
     ? [
         {
@@ -113,7 +103,6 @@ export function buildBucketDefinitions(
     : []
   return [
     ...imDefs,
-    ...embedDefs,
     ...apiDefs,
     {
       key: 'web',

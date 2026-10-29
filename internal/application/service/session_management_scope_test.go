@@ -26,10 +26,6 @@ func TestSessionManagementScope(t *testing.T) {
 		{name: "viewer", role: types.TenantRoleViewer},
 		{name: "missing_role"},
 		{
-			name: "embed_admin", role: types.TenantRoleAdmin,
-			principal: types.Principal{Type: types.PrincipalEmbedSession, ID: "1:channel:other"},
-		},
-		{
 			name: "api_admin", role: types.TenantRoleAdmin,
 			principal: types.Principal{Type: types.PrincipalAPIExternalUser, ID: "1:other"},
 		},
@@ -45,14 +41,19 @@ func TestSessionManagementScope(t *testing.T) {
 				ownerID     string
 				description string
 				imPlatform  string
+				// adminManageable mirrors SessionRequiresAdminConsoleRead:
+				// the Web-console Admin+ fallback only reaches
+				// channel-managed rows (API-key, IM, maintenance markers)
+				// — never another user's plain web session or an
+				// MCP-endpoint row.
+				adminManageable bool
 			}{
-				{"embed_owner", "embed_session:1:channel:visitor", types.EmbedSessionMarkerPrefix + "channel", ""},
-				{"embed_mcp_owner", "mcp_endpoint:1:endpoint", types.EmbedSessionMarkerPrefix + "channel", ""},
-				{"embed_api_owner", "api_tenant_key:1:7", types.EmbedSessionMarkerPrefix + "channel", ""},
-				{"other-web-user", "other-web-user", types.EmbedSessionMarkerPrefix + "channel", ""},
-				{"api", "api_tenant_key:1:7", "", ""},
-				{"im", "im-user", "", "feishu"},
-				{"maintenance", "other-web-user", types.SkillMaintenanceSessionMarker + "skill", ""},
+				{"mcp_owner", "mcp_endpoint:1:endpoint", "", "", false},
+				{"api_owner", "api_tenant_key:1:7", "", "", true},
+				{"other-web-user", "other-web-user", "", "", false},
+				{"api", "api_tenant_key:1:7", "", "", true},
+				{"im", "im-user", "", "feishu", true},
+				{"maintenance", "other-web-user", types.SkillMaintenanceSessionMarker + "skill", "", true},
 			} {
 				t.Run(operation+"/"+caller.name+"/"+target.name, func(t *testing.T) {
 					svc, db := newTestSessionService(t)
@@ -92,21 +93,21 @@ func TestSessionManagementScope(t *testing.T) {
 					}
 					require.ErrorIs(t, manage(foreign.ID), apperrors.ErrSessionNotFound)
 					err := manage(row.ID)
-					if caller.allowed {
+					if caller.allowed && target.adminManageable {
 						require.NoError(t, err)
 					} else {
 						require.ErrorIs(t, err, apperrors.ErrSessionNotFound)
 					}
 					var stored types.Session
 					err = db.First(&stored, "id = ?", row.ID).Error
-					if caller.allowed && operation != "update" {
+					if caller.allowed && target.adminManageable && operation != "update" {
 						require.ErrorIs(t, err, gorm.ErrRecordNotFound)
 						require.NoError(t, db.Unscoped().First(&stored, "id = ?", row.ID).Error)
 						require.True(t, stored.DeletedAt.Valid)
 					} else {
 						require.NoError(t, err)
 						expectedTitle := "original"
-						if caller.allowed {
+						if caller.allowed && target.adminManageable {
 							expectedTitle = "updated"
 							_, readErr := svc.GetSession(ctx, row.ID)
 							require.NoError(t, readErr, "updated channel sessions must remain readable")
@@ -138,7 +139,7 @@ func TestBatchDeleteSessionsManagementScopeMixedIDs(t *testing.T) {
 			ctx := context.WithValue(testSessionScopeContext(1, "alice"), types.TenantRoleContextKey, role)
 			rows := []types.Session{
 				{TenantID: 1, UserID: "alice", Title: "own"},
-				{TenantID: 1, UserID: "embed_session:1:channel:visitor", Title: "embed"},
+				{TenantID: 1, UserID: "api_tenant_key:1:7", Title: "api-key traffic"},
 				{TenantID: 2, UserID: "alice", Title: "foreign"},
 				{TenantID: 1, UserID: "bob", Title: "private web"},
 			}
@@ -179,7 +180,7 @@ func TestSessionManagementRejectsOtherUsersWebSessions(t *testing.T) {
 				case "update":
 					err = svc.UpdateSession(ctx, &types.Session{
 						ID: row.ID, TenantID: 1, Title: "updated",
-						Description: types.EmbedSessionMarkerPrefix + "planted",
+						Description: types.SkillMaintenanceSessionMarker + "planted",
 					})
 				case "delete":
 					err = svc.DeleteSession(ctx, row.ID)
@@ -215,7 +216,7 @@ func TestSessionManagementPropagatesStorageErrorsBeforeCleanup(t *testing.T) {
 				svc, db := newTestSessionService(t)
 				rows := []types.Session{
 					{TenantID: 1, UserID: "alice", Title: "own"},
-					{TenantID: 1, UserID: "embed_session:1:channel:visitor", Title: "embed"},
+					{TenantID: 1, UserID: "api_tenant_key:1:7", Title: "api-key traffic"},
 				}
 				require.NoError(t, db.Create(&rows).Error)
 				svc.sessionRepo = sessionManagementErrorRepo{

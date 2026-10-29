@@ -15,10 +15,6 @@ test('in-chat OAuth polling is bound to the newly opened authorization attempt',
     cardSource,
     /getMCPOAuthStatus\(props\.serviceId, authorization\.authorizationAttempt\)/,
   )
-  assert.match(
-    cardSource,
-    /props\.serviceId,\s*authorization\.authorizationAttempt,\s*\)/,
-  )
 })
 
 test('settings OAuth polling cannot accept a pre-existing token as fresh authorization', () => {

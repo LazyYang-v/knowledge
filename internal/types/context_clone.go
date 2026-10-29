@@ -58,10 +58,9 @@ var contextCloneAcrossDetach = map[ContextKey]bool{
 	SessionTenantIDContextKey: true,
 	SandboxTenantIDContextKey: true,
 
-	// Embed callers: the anonymous visitor id isolates embed OAuth, so losing
-	// it would merge visitors together.
-	EmbedQueryContextKey:   true,
-	EmbedVisitorContextKey: true,
+	// Vector-search callers: the embed query marker marks one embedding call
+	// as a search query; keep it across detached background work.
+	EmbedQueryContextKey: true,
 
 	// Diagnostics and presentation that background work is expected to keep.
 	// The Langfuse trace in particular must stay alive so the LLM / embedder /
@@ -119,10 +118,6 @@ var contextCloneAcrossDetach = map[ContextKey]bool{
 	// one attachment's file type. Read by the attachment processor on the same
 	// context that set it, and meaningless for anything else.
 	ChatParserEngineContextKey: false,
-	// The authenticated embed channel. Every reader takes it straight off the
-	// request context inside the embed handler that authenticated it; nothing
-	// downstream of a detach reads it.
-	EmbedChannelContextKey: false,
 	// The authenticated MCP endpoint. Read only by the MCP tool handlers on
 	// the request context that authenticated it.
 	MCPEndpointContextKey: false,

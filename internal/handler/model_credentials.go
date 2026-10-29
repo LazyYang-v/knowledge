@@ -17,7 +17,8 @@ import (
 // dedicated /models/:id/credentials subresource. See mcp_credentials.go for
 // the rationale; this handler mirrors that contract for Model resources.
 //
-// Recognized fields: "api_key" (every provider), "app_secret" (WeKnora Cloud).
+// Recognized fields: "api_key" (every provider), "app_secret" (signature-pair
+// vendors such as LKEAP / Volcengine rerank).
 type ModelCredentialsHandler struct {
 	svc interfaces.ModelService
 }

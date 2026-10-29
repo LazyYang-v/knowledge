@@ -156,46 +156,6 @@ for (const [root, files] of tmRoots) {
   }
 }
 
-// embed bundle audit
-const embedFile = join(dirname(fileURLToPath(import.meta.url)), 'embed.ts')
-const embedSource = readFileSync(embedFile, 'utf8')
-const embedMessagesMatch = embedSource.match(/const messages = (\{[\s\S]*?\n\}) as const/)
-const embedMessages = embedMessagesMatch
-  ? (Function(`"use strict"; return (${embedMessagesMatch[1]});`)() as Record<string, unknown>)
-  : {}
-
-const embedKeysByLocale = Object.fromEntries(
-  Object.entries(embedMessages).map(([locale, bundle]) => [locale, flattenMessages(bundle)]),
-) as Record<string, Set<string>>
-
-const embedStaticKeys = new Set<string>()
-const EMBED_STATIC_RE = /(?:\$t|(?<![.\w])t)\(\s*['"]([^'"]+)['"]/g
-for (const file of walk(join(SOURCE_ROOT, 'views/embed'))) {
-  const content = readFileSync(file, 'utf8')
-  let match: RegExpExecArray | null
-  EMBED_STATIC_RE.lastIndex = 0
-  while ((match = EMBED_STATIC_RE.exec(content))) embedStaticKeys.add(match[1])
-}
-
-const embedReference = embedKeysByLocale['en-US'] ?? new Set<string>()
-const embedMissing: string[] = []
-for (const key of embedStaticKeys) {
-  for (const [locale, keys] of Object.entries(embedKeysByLocale)) {
-    if (!keys.has(key)) embedMissing.push(`${key} -> missing in embed ${locale}`)
-  }
-}
-
-const embedDrift: string[] = []
-for (const [locale, keys] of Object.entries(embedKeysByLocale)) {
-  if (locale === 'en-US') continue
-  for (const key of embedReference) {
-    if (!keys.has(key)) embedDrift.push(`${locale}: missing ${key}`)
-  }
-  for (const key of keys) {
-    if (!embedReference.has(key)) embedDrift.push(`${locale}: extra ${key}`)
-  }
-}
-
 console.log('=== Main app: dynamic prefix gaps ===')
 console.log(`Template literal prefixes: ${templatePrefixes.size}`)
 console.log(`String concat prefixes: ${concatPrefixes.size}`)
@@ -206,34 +166,4 @@ for (const gap of gaps.sort((a, b) => a.prefix.localeCompare(b.prefix))) {
   console.log(`  configured: ${gap.configured}, locale keys: ${gap.localeKeys}, missing referenced: ${gap.missingKeys.length}`)
   if (gap.missingKeys.length) console.log(`  sample missing: ${gap.missingKeys.join(', ')}`)
   console.log(`  files: ${gap.files.slice(0, 3).join(', ')}${gap.files.length > 3 ? '...' : ''}`)
-}
-
-console.log('\n=== Embed bundle (src/i18n/embed.ts) ===')
-for (const [locale, keys] of Object.entries(embedKeysByLocale)) {
-  console.log(`${locale}: ${keys.size} keys`)
-}
-console.log(`Embed static keys used in views/embed: ${embedStaticKeys.size}`)
-console.log(`Embed key parity issues: ${embedDrift.length}`)
-console.log(`Embed missing used keys: ${embedMissing.length}`)
-if (embedMissing.length) console.log(embedMissing.slice(0, 10).join('\n'))
-if (embedDrift.length) console.log(embedDrift.slice(0, 10).join('\n'))
-
-console.log('\n=== Main locale uncovered keys (in bundle, not referenced) ===')
-const uncovered = [...enKeys].filter((key) => !referenced.has(key))
-console.log(`Count: ${uncovered.length}`)
-
-console.log('\n=== Indirect i18n keys (computed / inline ternary) ===')
-const staticKeys = collectStaticI18nKeysFromSources()
-const indirectCandidates = [
-  'knowledgeList.sections.tenantOthers',
-  'knowledgeList.sections.tenantReadonly',
-  'agent.sections.tenantOthers',
-  'agent.sections.tenantReadonly',
-  'modelSettings.builtinModels.descriptionAdmin',
-  'modelSettings.builtinModels.description',
-]
-for (const key of indirectCandidates) {
-  console.log(
-    `${key}: tracked=${staticKeys.has(key)} locale=${enKeys.has(key)} referenced=${referenced.has(key)}`,
-  )
 }

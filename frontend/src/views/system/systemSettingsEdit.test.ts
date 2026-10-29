@@ -16,8 +16,8 @@ test('treats list edits as dirty by value, not by reference', () => {
 })
 
 test('resolves the latest setting so a reused row does not keep the pre-save value', () => {
-  const stale = { key: 'tenant.auto_create_api_key', value: false }
-  const current = { key: 'tenant.auto_create_api_key', value: true }
+  const stale = { key: 'tenant.auto_accept_invitation', value: false }
+  const current = { key: 'tenant.auto_accept_invitation', value: true }
   const settingsByKey = new Map([[current.key, current]])
 
   const resolved = resolveCurrentSetting(settingsByKey, stale.key)

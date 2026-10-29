@@ -27,36 +27,23 @@ test('every settings nav item writes only section', () => {
     { section: 'runtime-queues' },
   )
   assert.deepEqual(
-    buildSettingsRouteQuery(integrationSectionKey('claw'), {
+    buildSettingsRouteQuery(integrationSectionKey('mcpserver'), {
       section: 'integrations',
       tab: 'im',
     }),
-    { section: 'integration-claw' },
-  )
-  assert.deepEqual(
-    buildSettingsRouteQuery(integrationSectionKey('api'), {
-      section: 'integrations',
-      tab: 'im',
-      agentId: 'agt_1',
-    }),
-    { section: 'integration-api', agentId: 'agt_1' },
+    { section: 'integration-mcpserver' },
   )
 })
 
-test('legacy api / integrations / bare-tab query strings normalize to nav keys', () => {
-  assert.equal(normalizeSettingsSection('api'), 'integration-api')
-  assert.equal(normalizeSettingsSection('claw'), 'integration-claw')
-  assert.equal(normalizeSettingsSection('cli'), 'integration-cli')
+test('legacy integrations / bare-tab query strings normalize to nav keys', () => {
   assert.equal(normalizeSettingsSection('mcpserver'), 'integration-mcpserver')
   // 'mcp' is the MCP-client settings page, not the MCP server integration tab.
   assert.equal(normalizeSettingsSection('mcp'), 'mcp')
-  assert.equal(normalizeSettingsSection('integrations', 'cli'), 'integration-cli')
-  assert.equal(normalizeSettingsSection('integrations', 'embed'), 'integration-embed')
+  assert.equal(normalizeSettingsSection('integrations', 'mcpserver'), 'integration-mcpserver')
+  assert.equal(normalizeSettingsSection('integrations', 'embed'), 'integration-im')
   assert.equal(normalizeSettingsSection('integrations'), 'integration-im')
-  assert.equal(normalizeSettingsSection('integration-chrome'), 'integration-chrome')
   assert.equal(normalizeSettingsSection('system-global'), 'system-global')
-  assert.equal(isIntegrationSection('integration-chrome'), true)
-  assert.equal(isIntegrationSection('integration-cli'), true)
+  assert.equal(isIntegrationSection('integration-mcpserver'), true)
   assert.equal(isIntegrationSection('models'), false)
   assert.equal(isIntegrationSection('integration-unknown'), false)
 })
@@ -64,15 +51,15 @@ test('legacy api / integrations / bare-tab query strings normalize to nav keys',
 test('canonical settings query skips a redundant replace', () => {
   assert.equal(
     settingsQueryUnchanged(
-      { section: 'integration-claw' },
-      { section: 'integration-claw' },
+      { section: 'integration-mcpserver' },
+      { section: 'integration-mcpserver' },
     ),
     true,
   )
   assert.equal(
     settingsQueryUnchanged(
-      { section: 'integrations', tab: 'claw' },
-      { section: 'integration-claw' },
+      { section: 'integrations', tab: 'mcpserver' },
+      { section: 'integration-mcpserver' },
     ),
     false,
   )

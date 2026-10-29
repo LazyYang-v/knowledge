@@ -3,7 +3,7 @@
         <!-- 展开时：Logo + 搜索/折叠按钮同行 -->
         <div class="logo_row" v-if="!uiStore.sidebarCollapsed">
             <div class="logo_box" @click="router.push('/platform/knowledge-bases')" style="cursor: pointer;">
-                <img class="logo" src="@/assets/img/weknora.png" alt="">
+                <span class="logo-text">{{ t('menu.brandName') }}</span>
                 <sup v-if="isLiteEdition" class="lite-badge">Lite</sup>
             </div>
             <div class="logo_actions">
@@ -247,7 +247,6 @@ import {
     type SidebarSessionBucket,
 } from './sessionSidebarBuckets';
 import type { SessionForGrouping } from './sessionGrouping';
-import { listAllEmbedChannels } from '@/api/embed/index';
 import {
     classifyDateBucket,
     configuredPlatforms,
@@ -349,7 +348,6 @@ const sessionListBooting = ref(false);
 const currentSecondpath = ref('');
 const scrollContainer = ref<HTMLElement | null>(null);
 const imPlatforms = ref<string[]>([]);
-const embedChannelNames = ref<Record<string, string>>({});
 const activeSessionBucketKey = ref(DEFAULT_SESSION_BUCKET_KEY);
 const sessionListCanScroll = ref(false);
 const visibleChannelBuckets = computed(() =>
@@ -823,11 +821,9 @@ const ensureSessionInSidebar = (sessionId: string) => {
 
 const rebuildBucketDefinitions = () => buildBucketDefinitions(
     imPlatforms.value,
-    embedChannelNames.value,
     {
         web: t('menu.myChats'),
         imPlatform: (platform) => t(`agentEditor.im.${platform}`),
-        embedChannel: (name) => name,
         api: t('menu.apiChats'),
     },
     { includeAdminChannelBuckets: authStore.hasRole('admin') },
@@ -1017,16 +1013,6 @@ const loadSessionOriginMeta = async () => {
         imPlatforms.value = configuredPlatforms(res?.data || []);
     } catch {
         imPlatforms.value = [];
-    }
-    try {
-        const res: any = await listAllEmbedChannels();
-        const names: Record<string, string> = {};
-        for (const ch of res?.data || []) {
-            if (ch?.id && ch?.name) names[ch.id] = ch.name;
-        }
-        embedChannelNames.value = names;
-    } catch {
-        embedChannelNames.value = {};
     }
 };
 
@@ -1367,9 +1353,12 @@ const resizeSidebar = (delta: number, keyboard: boolean) => {
         min-width: 0;
         overflow: hidden;
 
-        .logo {
-            width: 108px;
-            height: auto;
+        .logo-text {
+            font-size: 15px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            color: var(--td-text-color-primary);
+            white-space: nowrap;
         }
 
         .lite-badge {

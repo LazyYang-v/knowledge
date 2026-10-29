@@ -85,8 +85,6 @@ func TestEveryProviderKeepsModelCredentialsIsolated(t *testing.T) {
 					require.Equal(t, key, req.Header.Get("x-api-key"))
 				case providers.AuthGoogleAPIKey:
 					require.Equal(t, key, req.Header.Get("x-goog-api-key"))
-				case providers.AuthSigned:
-					require.Equal(t, key, req.Header.Get("X-APPID"))
 				}
 				require.Equal(t, key, ep.ModelID)
 				require.Equal(t, key, ep.Headers["X-Model"])

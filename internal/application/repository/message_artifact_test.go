@@ -180,9 +180,6 @@ func TestListArtifactLibraryScopesAndGroupsVersions(t *testing.T) {
 	// keeps its soft-deleted mapping and must stay out as well.
 	imChat := createSession(t, db, &types.Session{TenantID: 7, Title: "飞书：张三的私聊"})
 	clearedIMChat := createSession(t, db, &types.Session{TenantID: 7, Title: "企微：已清空"})
-	embedChat := createSession(t, db, &types.Session{
-		TenantID: 7, Title: "网页挂件", Description: types.EmbedSessionMarkerPrefix + "ch-1",
-	})
 	require.NoError(t, db.Create(&testIMChannelSession{
 		ID: "ics-1", SessionID: imChat, Platform: "feishu", TenantID: 7,
 	}).Error)
@@ -220,7 +217,6 @@ func TestListArtifactLibraryScopesAndGroupsVersions(t *testing.T) {
 	add(maintenance, base, testArtifact("maint.pptx", "/w/m.pptx", base))
 	add(imChat, base.Add(5*time.Hour), testArtifact("salary.xlsx", "/w/salary.xlsx", base.Add(5*time.Hour)))
 	add(clearedIMChat, base.Add(5*time.Hour), testArtifact("cleared.xlsx", "/w/c.xlsx", base.Add(5*time.Hour)))
-	add(embedChat, base.Add(5*time.Hour), testArtifact("widget.pdf", "/w/widget.pdf", base.Add(5*time.Hour)))
 	deleted := add(mine, base.Add(4*time.Hour), testArtifact("gone.pptx", "/w/gone.pptx", base.Add(4*time.Hour)))
 	require.NoError(t, repo.DeleteMessage(ctx, mine, deleted.ID))
 

@@ -218,23 +218,6 @@ var registry = map[string]settingSpec{
 			"仅在创建时读取，修改后只对之后新建的空间生效，不会回写已存在的空间。" +
 			"0 或负数表示使用内置默认值 10GB。",
 	},
-	// tenant.auto_create_api_key restores the legacy behaviour where creating
-	// a tenant also minted a full-access API key and returned its plaintext
-	// token in the create response. Newer versions stopped doing this (keys
-	// are created explicitly via tenant_api_keys), which is a breaking change
-	// for integrations that relied on the create response carrying a key.
-	// Deployments that need the old behaviour set this to true (or the
-	// WEKNORA_TENANT_AUTO_CREATE_API_KEY env var). Default false keeps the
-	// current, safer no-implicit-key behaviour. Read at create time only.
-	"tenant.auto_create_api_key": {
-		Type:     "bool",
-		EnvName:  "WEKNORA_TENANT_AUTO_CREATE_API_KEY",
-		Default:  false,
-		Category: "tenant",
-		Description: "创建空间时是否自动生成一个全量权限（full_access）的 API Key，并在创建接口的响应中返回其明文 token。" +
-			"用于兼容旧版本「创建空间即下发默认 API Key」的行为（属于破坏性变更的回退开关）。" +
-			"每次创建空间时实时读取，修改后立即生效。默认 false（不自动创建，需通过 API Key 管理显式创建）。",
-	},
 	// tenant.auto_accept_invitation: invite = auto-join switch (default false).
 	"tenant.auto_accept_invitation": {
 		Type:     "bool",

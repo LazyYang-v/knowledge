@@ -155,8 +155,7 @@ func streamStoredFile(c *gin.Context, reader io.ReadCloser, contentType string, 
 
 // newFileServeHandler builds the file-proxy handler. It reads the tenant from
 // the request context (set by whichever auth middleware precedes it), so the
-// same handler backs both the authenticated /files route and the embed route
-// (where EmbedAuth injects the channel's tenant). Tenant ownership of the
+// authenticated /files route. Tenant ownership of the
 // requested path is enforced via ValidateStoragePathTenant either way.
 func newFileServeHandler(
 	globalFileService interfaces.FileService,
@@ -246,8 +245,7 @@ func serveFilesWithResources(
 	// API-key guard. A KB-restricted key is denied (a raw storage path cannot
 	// be bounded to its allow-list); full-access keys and tenant-wide retrieve
 	// keys pass, since the handler still enforces same-tenant paths
-	// (ValidateStoragePathTenant). Embed routes use their own
-	// /embed/.../files handler.
+	// (ValidateStoragePathTenant).
 	r.GET(
 		"/files",
 		middleware.AllowFileServeAPIKey(),
@@ -256,7 +254,7 @@ func serveFilesWithResources(
 }
 
 // serveResourceGrants exposes short, revocable capability URLs for clients
-// such as IM platforms that cannot attach a WeKnora bearer/embed token.
+// such as IM platforms that cannot attach a WeKnora bearer token.
 func serveResourceGrants(
 	r *gin.Engine,
 	resourceCatalog interfaces.ResourceCatalog,

@@ -22,7 +22,6 @@ type TenantResponse struct {
 	ContextConfig       *types.ContextConfig       `json:"context_config,omitempty"`
 	WebSearchConfig     *types.WebSearchConfig     `json:"web_search_config,omitempty"`
 	ParserEngineConfig  *types.ParserEngineConfig  `json:"parser_engine_config,omitempty"`
-	Credentials         *types.CredentialsConfig   `json:"credentials,omitempty"`
 	StorageEngineConfig *types.StorageEngineConfig `json:"storage_engine_config,omitempty"`
 	ChatHistoryConfig   *types.ChatHistoryConfig   `json:"chat_history_config,omitempty"`
 	RetrievalConfig     *types.RetrievalConfig     `json:"retrieval_config,omitempty"`
@@ -64,7 +63,6 @@ func NewTenantResponseWithRole(tenant *types.Tenant, role types.TenantRole) *Ten
 	if includeSecrets {
 		resp.WebSearchConfig = types.WebSearchConfigForResponse(tenant.WebSearchConfig, true)
 		resp.ParserEngineConfig = types.ParserEngineConfigForResponse(tenant.ParserEngineConfig, true)
-		resp.Credentials = types.CredentialsConfigForResponse(tenant.Credentials, true)
 		resp.StorageEngineConfig = types.StorageEngineConfigForResponse(tenant.StorageEngineConfig, true)
 	}
 	return resp

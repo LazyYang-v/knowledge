@@ -71,7 +71,6 @@ func TestRerankProtocolAssignment(t *testing.T) {
 		"qianfan":         api.RerankCohere,
 		"gpustack":        api.RerankCohere,
 		"generic":         api.RerankCohere,
-		"weknoracloud":    api.RerankCohere,
 		"novita":          api.RerankCohere,
 		"openrouter":      api.RerankCohere,
 		"litellm":         api.RerankCohere,
@@ -207,24 +206,6 @@ func TestNvidiaRerankScoresAreComparable(t *testing.T) {
 	assert.Greater(t, got[0].RelevanceScore, got[1].RelevanceScore)
 }
 
-// TestSignedRerankVendorRequiresItsIdentityPair keeps the pre-catalog
-// contract: WeKnora Cloud rerank is signed with an AppID / AppSecret pair, and
-// a row without one must fail at construction rather than send unsigned
-// requests that the far end rejects with something less readable.
-func TestSignedRerankVendorRequiresItsIdentityPair(t *testing.T) {
-	_, err := rerank.NewReranker(&rerank.RerankerConfig{
-		Provider: "weknoracloud", ModelName: "rerank",
-	})
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "AppID")
-
-	_, err = rerank.NewReranker(&rerank.RerankerConfig{
-		Provider: "weknoracloud", ModelName: "rerank", AppID: "app",
-	})
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "AppSecret")
-}
-
 // TestTruncatePromptTokensOnlyReachesVLLMClassVendors pins the gate on the
 // vLLM extension restored from the pre-catalog client. It is opt-in per row,
 // but the row can only opt into it on a runtime that implements it: no
@@ -244,7 +225,7 @@ func TestTruncatePromptTokensOnlyReachesVLLMClassVendors(t *testing.T) {
 		})
 	}
 
-	for _, id := range []string{"jina", "zhipu", "siliconflow", "qianfan", "weknoracloud", "aliyun", "nvidia"} {
+	for _, id := range []string{"jina", "zhipu", "siliconflow", "qianfan", "aliyun", "nvidia"} {
 		t.Run(id+" rejects it", func(t *testing.T) {
 			_, err := modelruntime.Resolve(modelruntime.Ref{
 				Provider: id, Model: "m", ModelType: types.ModelTypeRerank, Extra: optIn,
@@ -302,26 +283,6 @@ func TestRerankCeilingsAreTheDocumentedOnes(t *testing.T) {
 			assert.Equal(t, want.MaxRequestChars, got.MaxRequestChars, "max request characters")
 			assert.Equal(t, want.MaxConcurrency, got.MaxConcurrency, "max concurrency")
 		})
-	}
-}
-
-// TestWeKnoraCloudRerankKeepsItsDeadline pins the one rerank vendor that has
-// ever had a client-level timeout. Without it a hung endpoint holds the
-// retrieval stage open for as long as the caller's context allows.
-func TestWeKnoraCloudRerankKeepsItsDeadline(t *testing.T) {
-	resolved, err := modelruntime.Resolve(modelruntime.Ref{
-		Provider: "weknoracloud", Model: "rerank", ModelType: types.ModelTypeRerank,
-	})
-	require.NoError(t, err)
-	assert.Equal(t, 60, resolved.Rerank.RequestTimeout)
-
-	// Everyone else has always run without one and relies on the caller.
-	for _, id := range []string{"zhipu", "jina", "siliconflow", "aliyun", "nvidia", "generic"} {
-		other, err := modelruntime.Resolve(modelruntime.Ref{
-			Provider: id, Model: "m", ModelType: types.ModelTypeRerank,
-		})
-		require.NoError(t, err)
-		assert.Zero(t, other.Rerank.RequestTimeout, "%s did not have a client deadline before", id)
 	}
 }
 

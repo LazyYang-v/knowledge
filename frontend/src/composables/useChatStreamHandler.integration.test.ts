@@ -177,17 +177,3 @@ test('corrected message IDs reauthorize images without requiring completion', as
   assert.match(h.img.src, /^blob:/)
 })
 
-test('completion retries preserve the embed authentication plane', async t => {
-  const h = setup(t, 'ordinary')
-  setDefaultProtectedFileAccess({ mode: 'embed', channelId: 'channel', token: 'embed-token' })
-  h.send('answer', h.answer)
-  await h.render()
-  h.send('answer', '', true)
-  h.persist()
-  h.send('complete', '', true, { final_content: h.answer })
-  await h.flush()
-  assert.equal(h.requests.length, 2)
-  assert.ok(h.requests.every(request => request.url.startsWith('/api/v1/embed/channel/files?')))
-  assert.deepEqual(h.requests[1].headers, { Authorization: 'Embed embed-token' })
-  assert.match(h.img.src, /^blob:/)
-})

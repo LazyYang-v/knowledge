@@ -10,7 +10,6 @@ export type SettingsRoleKey = 'viewer' | 'contributor' | 'admin' | 'owner'
 export const SETTINGS_SECTION_MIN_ROLE: Record<string, SettingsRoleKey> = {
   general: 'viewer',
   ollama: 'admin',
-  weknoracloud: 'admin',
   models: 'viewer',
   websearch: 'admin',
   chathistory: 'admin',
@@ -47,6 +46,5 @@ export const SYSTEM_ADMIN_SETTINGS_SECTIONS = new Set([
   'system-global',
   'model-catalog',
   'runtime-queues',
-  'platform-api-keys',
   'system-audit-log',
 ])

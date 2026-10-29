@@ -106,8 +106,6 @@ type Tenant struct {
 	WebSearchConfig *WebSearchConfig `yaml:"web_search_config"   json:"web_search_config"   gorm:"type:jsonb"`
 	// Parser engine config overrides (MinerU endpoint, API key, etc.). Used when parsing documents; overrides env.
 	ParserEngineConfig *ParserEngineConfig `yaml:"parser_engine_config" json:"parser_engine_config" gorm:"type:jsonb"`
-	// Credentials config: third-party provider credentials (e.g. WeKnoraCloud AppID/AppSecret)
-	Credentials *CredentialsConfig `yaml:"credentials" json:"credentials" gorm:"type:jsonb"`
 	// Storage engine config: parameters for Local, MinIO, COS. Used for document/file storage and docreader.
 	StorageEngineConfig *StorageEngineConfig `yaml:"storage_engine_config" json:"storage_engine_config" gorm:"type:jsonb"`
 	// DefaultStorageBackendID is the workspace default concrete storage instance.
@@ -182,18 +180,6 @@ func (c *RetrieverEngines) Scan(value interface{}) error {
 
 // CredentialsConfig holds third-party provider credentials at the tenant level.
 // Stored as a single JSONB column; each provider is a nested object so new
-// providers can be added without schema changes.
-type CredentialsConfig struct {
-	WeKnoraCloud *WeKnoraCloudCredentials `json:"weknoracloud,omitempty"`
-}
-
-// WeKnoraCloudCredentials stores WeKnoraCloud AppID and AppSecret.
-// AppSecret is AES-256 encrypted before persisting to database.
-type WeKnoraCloudCredentials struct {
-	AppID     string `json:"app_id"`
-	AppSecret string `json:"app_secret"`
-}
-
 type APIPrincipalMode string
 
 const (
@@ -247,56 +233,6 @@ func (c *APIPrincipalConfig) Scan(value interface{}) error {
 	} else {
 		log.Printf("[crypto] tenant api_principal_config.hmac_secret: decrypt failed (SYSTEM_AES_KEY missing/rotated?), treating as unconfigured")
 		c.HMACSecret = ""
-	}
-	return nil
-}
-
-// GetWeKnoraCloud returns the WeKnoraCloud credentials, or nil if not configured.
-func (c *CredentialsConfig) GetWeKnoraCloud() *WeKnoraCloudCredentials {
-	if c == nil || c.WeKnoraCloud == nil {
-		return nil
-	}
-	if c.WeKnoraCloud.AppID == "" || c.WeKnoraCloud.AppSecret == "" {
-		return nil
-	}
-	return c.WeKnoraCloud
-}
-
-// Value implements the driver.Valuer interface for CredentialsConfig
-func (c *CredentialsConfig) Value() (driver.Value, error) {
-	if c == nil {
-		return nil, nil
-	}
-	cp := *c
-	if cp.WeKnoraCloud != nil && cp.WeKnoraCloud.AppSecret != "" {
-		if key := utils.GetAESKey(); key != nil {
-			if encrypted, err := utils.EncryptAESGCM(cp.WeKnoraCloud.AppSecret, key); err == nil {
-				cp.WeKnoraCloud = &WeKnoraCloudCredentials{AppID: cp.WeKnoraCloud.AppID, AppSecret: encrypted}
-			}
-		}
-	}
-	return json.Marshal(cp)
-}
-
-// Scan implements the sql.Scanner interface for CredentialsConfig
-func (c *CredentialsConfig) Scan(value interface{}) error {
-	if value == nil {
-		return nil
-	}
-	b, ok := value.([]byte)
-	if !ok {
-		return nil
-	}
-	if err := json.Unmarshal(b, c); err != nil {
-		return err
-	}
-	if c.WeKnoraCloud != nil {
-		if plain, ok := utils.DecryptStoredSecretLenient(c.WeKnoraCloud.AppSecret); ok {
-			c.WeKnoraCloud.AppSecret = plain
-		} else {
-			log.Printf("[crypto] tenant credentials we_knora_cloud.app_secret: decrypt failed (SYSTEM_AES_KEY missing/rotated?), treating as unconfigured")
-			c.WeKnoraCloud.AppSecret = ""
-		}
 	}
 	return nil
 }

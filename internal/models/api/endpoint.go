@@ -47,7 +47,7 @@ type Endpoint struct {
 	BaseURL string
 	// URL, when set, is the complete request URL and overrides the protocol
 	// default of BaseURL + protocol path. Vendors with non-standard paths
-	// (Azure deployments, WeKnora Cloud) set it.
+	// (Azure deployments) set it.
 	URL string
 	// Query is appended to the final URL (Azure api-version).
 	Query map[string]string

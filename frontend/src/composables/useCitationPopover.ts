@@ -21,7 +21,6 @@ export type CitationFloatState = {
 }
 
 type CitationPopoverOptions = {
-  mode: 'chat' | 'embed'
   getKnowledgeReferences?: () => CitationKnowledgeRef[] | null | undefined
   getCacheScope: () => string
   fetchChunk: (chunkId: string) => Promise<{ data?: { content?: unknown } } | undefined>
@@ -32,8 +31,8 @@ type CitationPopoverOptions = {
 /** Shared interaction lifecycle; entry points retain their access and error policies. */
 export function useCitationPopover(rootRef: Ref<HTMLElement | null>, options: CitationPopoverOptions) {
   const referencesDrawer = useChatReferencesDrawer()
-  const isChat = options.mode === 'chat'
-  const popupSelector = `.${options.mode}-citation-float`
+  const popupSelector = '.chat-citation-float'
+  const isChat = true
   const float = ref<CitationFloatState>({
     visible: false,
     type: 'kb',
@@ -199,17 +198,11 @@ export function useCitationPopover(rootRef: Ref<HTMLElement | null>, options: Ci
       e.preventDefault()
       e.stopPropagation()
       const chunkId = resolveChunkId(kbEl)
-      // Chat opens the cited document at the cited passage; the embed has no
-      // access to original files and keeps the reference list.
-      const source = isChat ? { anchorText: citationAnchorText(kbEl), openSource: true,
-        documentTitle: kbEl.getAttribute('data-doc') || '', knowledgeBaseId: kbEl.getAttribute('data-kb-id') || '' } : {}
+      const source = { anchorText: citationAnchorText(kbEl), openSource: true,
+        documentTitle: kbEl.getAttribute('data-doc') || '', knowledgeBaseId: kbEl.getAttribute('data-kb-id') || '' }
       if (openDrawerForCitation({ chunkId, ...source })) return
       void openKb(kbEl)
       return
-    }
-    if (!isChat && target.closest?.('.citation-wiki')) {
-      e.preventDefault()
-      e.stopPropagation()
     }
   }
 

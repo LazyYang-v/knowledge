@@ -146,7 +146,7 @@ func TestDoesNotDoubleTheRerankPath(t *testing.T) {
 	assert.Equal(t, "/api/paas/v4/rerank", *path)
 }
 
-// WeKnora Cloud serves the same shape on its own path.
+// Vendors may declare a custom path for the same shape.
 func TestHonoursAVendorDeclaredPath(t *testing.T) {
 	server, path, _ := serve(t, `{"results":[]}`)
 	defer server.Close()

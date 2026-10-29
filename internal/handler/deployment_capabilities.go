@@ -14,8 +14,6 @@ var DeploymentCapabilityKeys = []string{
 	"organizations",
 	"agents",
 	"integrations.im",
-	"integrations.embed",
-	"integrations.api",
 	"integrations.mcpserver",
 	"settings.mcp",
 	"settings.websearch",
@@ -44,8 +42,6 @@ type DeploymentFeatureAvailability struct {
 	Organizations bool
 	Agents        bool
 	IM            bool
-	Embed         bool
-	API           bool
 	MCPServer     bool
 	MCP           bool
 	WebSearch     bool
@@ -107,8 +103,6 @@ func BuildDeploymentCapabilities(
 			"organizations":           organizations,
 			"agents":                  supportedDeploymentCapability(available.Agents),
 			"integrations.im":         supportedDeploymentCapability(available.IM),
-			"integrations.embed":      supportedDeploymentCapability(available.Embed),
-			"integrations.api":        supportedDeploymentCapability(available.API),
 			"integrations.mcpserver":  supportedDeploymentCapability(available.MCPServer),
 			"settings.mcp":            supportedDeploymentCapability(available.MCP),
 			"settings.websearch":      supportedDeploymentCapability(available.WebSearch),

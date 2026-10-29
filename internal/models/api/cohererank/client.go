@@ -2,7 +2,7 @@
 // every other vendor copied: POST {base}/rerank with {model, query,
 // documents} answering {results: [{index, relevance_score, document}]}.
 //
-// Jina, Zhipu, SiliconFlow, Qianfan, GPUStack, WeKnora Cloud and any
+// Jina, Zhipu, SiliconFlow, Qianfan, GPUStack and any
 // OpenAI-compatible gateway that serves rerank all speak it. Their
 // differences — which optional fields are accepted, where the endpoint sits,
 // what the documented ceilings are — arrive as api.RerankSettings; this

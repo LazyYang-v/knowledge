@@ -16,10 +16,10 @@ import (
 )
 
 // legacyProviderIDs is the complete set of parameters.provider values the
-// pre-catalog code could write: provider.AllProviders() plus weknoracloud,
-// as of internal/models/provider/provider.go before the refactor.
+// pre-catalog code could write, as of internal/models/provider/provider.go
+// before the refactor.
 var legacyProviderIDs = []string{
-	"generic", "weknoracloud", "aliyun", "zhipu", "volcengine", "hunyuan",
+	"generic", "aliyun", "zhipu", "volcengine", "hunyuan",
 	"siliconflow", "deepseek", "minimax", "moonshot", "modelscope", "qianfan",
 	"qiniu", "openai", "anthropic", "gemini", "openrouter", "litellm",
 	"requesty", "jina", "mimo", "longcat", "lkeap", "gpustack", "nvidia",
@@ -93,14 +93,6 @@ func legacyRows() []legacyRow {
 			name: "local Ollama VLM row (interface_type ollama)", model: "llava:13b", typ: types.ModelTypeVLLM,
 			params: types.ModelParameters{
 				InterfaceType: "ollama", ParameterSize: "13B", BaseURL: "http://localhost:11434",
-			},
-		},
-		{
-			name: "WeKnoraCloud row with app credentials", model: "weknora-chat", typ: types.ModelTypeKnowledgeQA,
-			params: types.ModelParameters{
-				Provider: "weknoracloud", BaseURL: "https://weknora.weixin.qq.com",
-				AppID: "app", AppSecret: "secret",
-				ExtraConfig: map[string]string{"remote_model_name": "hunyuan-turbos"},
 			},
 		},
 		{

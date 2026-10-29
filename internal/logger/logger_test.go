@@ -186,10 +186,10 @@ func TestLevelColorFor(t *testing.T) {
 func TestCloneContextPreservesPrincipal(t *testing.T) {
 	t.Parallel()
 
-	ctx := types.WithPrincipal(context.Background(), types.EmbedSessionPrincipal(10000, "ch1", "sess1"))
+	ctx := types.WithPrincipal(context.Background(), types.MCPEndpointPrincipal(10000, "ep1"))
 	cloned := CloneContext(ctx)
 
-	if got := types.SessionOwnerIDFromContext(cloned); got != "embed_session:10000:ch1:sess1" {
+	if got := types.SessionOwnerIDFromContext(cloned); got != "mcp_endpoint:10000:ep1" {
 		t.Fatalf("SessionOwnerIDFromContext(cloned) = %q", got)
 	}
 }

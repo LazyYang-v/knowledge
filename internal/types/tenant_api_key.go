@@ -111,7 +111,7 @@ const (
 	// messages across the tenant.
 	APIKeyCapabilityMessageHistory APIKeyCapability = "message_history"
 	// APIKeyCapabilityManageModels lets a key manage tenant model
-	// definitions, credentials, model checks, and WeKnoraCloud credentials.
+	// definitions, credentials, and model checks.
 	APIKeyCapabilityManageModels APIKeyCapability = "manage_models"
 	// APIKeyCapabilityManageMCPServices lets a key manage tenant MCP service
 	// definitions, credentials, tool policies, and per-principal OAuth state.

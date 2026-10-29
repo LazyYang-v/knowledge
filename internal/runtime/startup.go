@@ -142,12 +142,12 @@ func LogStartupEnv(ctx context.Context) {
 			len(k))
 	}
 	// Upgrades from example configs keep the published example AES key,
-	// which SystemHMACKey rejects — embed sessions and presigned links then
-	// fail at request time with no hint at boot.
+	// which SystemHMACKey rejects — presigned links then fail at request
+	// time with no hint at boot.
 	if len(utils.SystemHMACKey()) == 0 {
 		logger.Warn(ctx,
 			"[startup-env] no usable signing key: set SYSTEM_SIGNING_KEY (e.g. `openssl rand -hex 32`) — "+
-				"embed sessions and presigned file links are DISABLED. SYSTEM_AES_KEY is only used as a fallback "+
+				"presigned file links are DISABLED. SYSTEM_AES_KEY is only used as a fallback "+
 				"when it is at least 16 chars and not an example value; do not change it to fix this")
 	}
 	if strings.EqualFold(strings.TrimSpace(os.Getenv("REDIS_TLS_INSECURE_SKIP_VERIFY")), "true") {

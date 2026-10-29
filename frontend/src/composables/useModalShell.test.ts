@@ -51,7 +51,6 @@ function fixture() {
       useDeploymentCapabilitiesStore: () => ({ isSupported: () => true, async ensureLoaded() {} }),
     },
     '@/api/agent': { listIMChannels: async () => ({ data: [] }) },
-    '@/api/embed': { listEmbedChannels: async () => ({ data: [] }) },
     '@/api/skill': {},
     '@/api/system': { isNamedSandboxBackend: () => true },
     '@/utils/clipboard': { copyWithToast() {} },

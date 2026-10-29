@@ -29,18 +29,10 @@ func (r *Resolved) Endpoint(kind types.ModelType, c Connection) (api.Endpoint, e
 		creds.APIKey = v.DefaultAPIKey
 	}
 	protocol := v.API
-	label := strings.ToLower(string(kind))
 	if kind == types.ModelTypeKnowledgeQA || kind == types.ModelTypeVLLM {
-		protocol, label = r.API, "provider"
+		protocol = r.API
 	}
-	if v.AuthStyleFor(protocol) == providers.AuthSigned {
-		if creds.AppID == "" {
-			return api.Endpoint{}, fmt.Errorf("%s %s: AppID is required", v.Name, label)
-		}
-		if creds.AppSecret == "" {
-			return api.Endpoint{}, fmt.Errorf("%s %s: AppSecret is required", v.Name, label)
-		}
-	} else if v.RequiresAuth && protocol == api.APIAnthropicMessages &&
+	if v.RequiresAuth && protocol == api.APIAnthropicMessages &&
 		(kind == types.ModelTypeKnowledgeQA || kind == types.ModelTypeVLLM) && strings.TrimSpace(creds.APIKey) == "" {
 		return api.Endpoint{}, fmt.Errorf("%s provider: API key is required", v.Name)
 	}
